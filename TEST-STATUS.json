@@ -1,5 +1,5 @@
 {
-  "status": "experimental-source",
+  "status": "experimental-arm64-test-package",
   "version": "0.1.0",
   "author": "MiuxH",
   "repository": "https://github.com/MiuxH/az-waveform-height",
@@ -11,6 +11,13 @@
   "host_tsan": "passed",
   "official_manifest_icon": "passed",
   "repository_catalog": "passed (empty before release)",
-  "arm64_build": "not run here; Docker/GitHub Actions required",
-  "native_emulator_and_hardware": "not run for community port"
+  "arm64_build": "passed: official SDK GCC 7 ARM64 container",
+  "native_emulator_and_hardware": "not run for community port",
+  "source_published": true,
+  "official_package_validator": "passed",
+  "workflow_run": "https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910",
+  "test_artifact": "https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910/artifacts/12525033676",
+  "built_commit": "30d873347aca6805f86d91c4890dfc6641dabf5b",
+  "package_sha256": "35bb625c765e75fc7570db090ba6ccf2e613cbd8bbc31832e65c308ef8da07a9",
+  "package_size": 63527
 }

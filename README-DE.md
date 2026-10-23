@@ -7,8 +7,11 @@ Blue, RGB und 3 Band benutzen weiterhin die originalen AZ-Zeichner.
 
 **Status: experimenteller SDK-Port 0.1.0.** Die vorherige Core-Mod V4 wurde in
 einen separaten Adapter uebertragen. Dieser Community-Port wurde noch nicht auf
-dem echten AZ oder im Emulator ausgefuehrt. Der hier erzeugte Host-Build ist
-kein auf dem Deck ladbarer ARM64-Build. Es gibt noch kein veroeffentlichtes Release.
+dem echten AZ oder im Emulator ausgefuehrt. Der ARM64-Build und der offizielle SDK-Paketvalidator sind am 23.10.2026
+erfolgreich durchgelaufen. [Testpaket herunterladen](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910/artifacts/12525033676)
+(GitHub-Anmeldung erforderlich), dann die enthaltene .azmod-Datei wie unten
+beschrieben verwenden. [Build-Protokoll](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910).
+Es gibt noch kein veroeffentlichtes Release.
 
 ## Fuer deinen ersten Test
 
@@ -63,8 +66,7 @@ einen Hook-Konflikt verursachen, der dann sauber abgelehnt werden muss.
 
 ## Veroeffentlichung fuer andere DJs
 
-Vorgesehene Adresse: **MiuxH/az-waveform-height**. Dieses Paket reserviert oder
-erstellt das Repository noch nicht. azmods-repo.json ist zunaechst absichtlich
+Oeffentliches Quellcode-Repository: **MiuxH/az-waveform-height**. azmods-repo.json ist zunaechst absichtlich
 leer: Es gibt noch keinen echten Download, dessen Groesse und SHA256 eingetragen
 werden koennten. Es enthaelt keine Platzhalter-Pakete oder erfundenen Pruefsummen.
 
@@ -138,8 +140,10 @@ eignet sich deshalb nicht unveraendert fuer diesen nativen Hook-Port; make test
 verwendet die eigenen SDK- und nativen Objektfixtures. LeakSanitizer ist hier
 wegen Prozesssichtbeschraenkungen ausgeschaltet.
 
-Noch offen: ARM64-Build und offizieller Gesamt-Paketvalidator in Docker/Actions,
-Emulatorlauf und echter AZ-Test. Die Hosttests verwenden simulierte Objekte und
+ARM64-Build, offizieller Gesamt-Paketvalidator und Paketerstellung in GitHub
+Actions bestanden. Paket: 63 527 Bytes, SHA256
+`35bb625c765e75fc7570db090ba6ccf2e613cbd8bbc31832e65c308ef8da07a9`.
+Noch offen: Emulatorlauf und echter AZ-Test. Die Hosttests verwenden simulierte Objekte und
 beweisen keine native Laufzeitstabilitaet. Der oeffentliche Mod Index sollte erst
 nach diesen Nachweisen beantragt werden. Die CI-Tests ersetzen keinen Audio-Test.
 
