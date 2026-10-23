@@ -5,13 +5,11 @@ Sie erweitert die Hoehe der nativen Waveforms in der normalen 4-DECK-Ansicht,
 von Original bis fast aneinander. Die nativen Beatgrids behalten ihre Hoehe.
 Blue, RGB und 3 Band benutzen weiterhin die originalen AZ-Zeichner.
 
-**Status: experimenteller SDK-Port 0.1.1.** Die vorherige Core-Mod V4 wurde in
-einen separaten Adapter uebertragen. Dieser Community-Port wurde noch nicht auf
-dem echten AZ oder im Emulator ausgefuehrt. Der ARM64-Build und der offizielle SDK-Paketvalidator sind am 23.10.2026
-erfolgreich durchgelaufen. [Testpaket herunterladen](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910/artifacts/12525033676)
-(GitHub-Anmeldung erforderlich), dann die enthaltene .azmod-Datei wie unten
-beschrieben verwenden. [Build-Protokoll](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910).
-Es gibt noch kein veroeffentlichtes Release.
+**Status: experimenteller SDK-Port 0.1.1.** Der ARM64-Build und der offizielle
+Paketvalidator sind bestanden. [Testpaket herunterladen](https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643/artifacts/12529959088).
+0.1.0 scheiterte im Emulator beim Initialisieren; der korrigierte 0.1.1-Port
+muss noch im Emulator und auf dem echten Deck getestet werden. Es gibt kein
+Katalog-Release. Den alten Testpaket-Link fuer 0.1.0 nicht mehr verwenden.
 
 ## Fuer deinen ersten Test
 
@@ -147,8 +145,8 @@ verwendet die eigenen SDK- und nativen Objektfixtures. LeakSanitizer ist hier
 wegen Prozesssichtbeschraenkungen ausgeschaltet.
 
 ARM64-Build, offizieller Gesamt-Paketvalidator und Paketerstellung in GitHub
-Actions bestanden. Paket: 63 527 Bytes, SHA256
-`35bb625c765e75fc7570db090ba6ccf2e613cbd8bbc31832e65c308ef8da07a9`.
+Actions bestanden. Paket 0.1.1: 63 594 Bytes, SHA256
+`fb4cb8da221c6d4c3d19ff40b3ebaa59d13b69cab21209adf90bd4a6a0e36c89`.
 Noch offen: Emulatorlauf und echter AZ-Test. Die Hosttests verwenden simulierte Objekte und
 beweisen keine native Laufzeitstabilitaet. Der oeffentliche Mod Index sollte erst
 nach diesen Nachweisen beantragt werden. Die CI-Tests ersetzen keinen Audio-Test.
@@ -169,4 +167,4 @@ Captures oder Zugangsdaten enthalten. SDK-Commit:
 mit "not inside EP147's data". 0.1.1 behebt diesen Adapterfehler; sein echter
 Emulatorlauf und der Hardware-Test bleiben offen. Die 28 lokalen Fixturechecks
 decken auch hohe Emulatorzeiger und unveraenderte andere Komponenten ab.
-Historische Paket-Links und Pruefsummen oben beziehen sich auf 0.1.0.
+Die aktuellen Paket-Links und Pruefsummen beziehen sich auf 0.1.1.

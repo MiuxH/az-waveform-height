@@ -19,6 +19,6 @@ The official core's waveform paint and FPS hooks remain in the call chain.
 No SDK range or ownership check is bypassed. High 48-bit emulator userspace
 addresses are now accepted; kernel and unaligned pointers remain rejected.
 
-28 fixture checks passed in plain, ASan/UBSan and TSan. The fixed version's
-ARM64 build is checked by GitHub Actions. Emulator and hardware runtime
+28 fixture checks passed in plain, ASan/UBSan and TSan. The 0.1.1 ARM64 build and official package validator passed.
+[Test package](https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643/artifacts/12529959088). Emulator and hardware runtime
 verification remain pending. No public mod-catalog release yet.

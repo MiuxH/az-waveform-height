@@ -1,5 +1,5 @@
 {
-  "status": "experimental-hook-fix",
+  "status": "experimental-arm64-hook-fix",
   "version": "0.1.1",
   "author": "MiuxH",
   "repository": "https://github.com/MiuxH/az-waveform-height",
@@ -11,8 +11,13 @@
   "host_tsan": "passed",
   "official_manifest_icon": "passed",
   "repository_catalog": "passed (empty before release)",
-  "arm64_build": "pending GitHub Actions for 0.1.1",
+  "arm64_build": "passed: official SDK ARM64 GCC 7",
   "native_emulator_and_hardware": "0.1.0: emulator init 5, claim_vslot rejected RX rodata; 0.1.1 runtime pending",
   "source_published": true,
-  "official_package_validator": "pending for 0.1.1"
+  "official_package_validator": "passed for 0.1.1",
+  "built_commit": "902feb8035b66cc0edd34e944f83362af245c4d4",
+  "workflow_run": "https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643",
+  "test_artifact": "https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643/artifacts/12529959088",
+  "package_sha256": "fb4cb8da221c6d4c3d19ff40b3ebaa59d13b69cab21209adf90bd4a6a0e36c89",
+  "package_size": 63594
 }
