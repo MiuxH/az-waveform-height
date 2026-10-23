@@ -1,0 +1,32 @@
+name: build-test-package
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native hook fixtures
+        run: python3 tests/run.py --passes plain asan
+      - uses: actions/checkout@v4
+        with:
+          repository: Kyle-Hosman/az-mods-sdk
+          ref: 3dcaf8f7331ea94135d7161f653edfaf906d5ea6
+          path: .azmod-sdk
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - name: ARM64 build and official validator
+        run: python3 .azmod-sdk/tools/azmod-pack build .
+      - name: Test package
+        run: python3 .azmod-sdk/tools/azmod-pack package . --github MiuxH/az-waveform-height --tag miuxh-wave-height-0.1.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: miuxh-wave-height-test
+          path: dist/
+          if-no-files-found: error

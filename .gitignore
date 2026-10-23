@@ -1,0 +1,6 @@
+.azmod-sdk/
+out*/
+dist/
+Backups/
+__pycache__/
+*.pyc

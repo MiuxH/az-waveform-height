@@ -1,0 +1,16 @@
+{
+  "status": "experimental-source",
+  "version": "0.1.0",
+  "author": "MiuxH",
+  "repository": "https://github.com/MiuxH/az-waveform-height",
+  "published": false,
+  "firmware_tag": "ep147-9e9454e357389ece",
+  "host_native_checks": 25,
+  "host_plain": "passed",
+  "host_asan_ubsan": "passed (leak inspection disabled)",
+  "host_tsan": "passed",
+  "official_manifest_icon": "passed",
+  "repository_catalog": "passed (empty before release)",
+  "arm64_build": "not run here; Docker/GitHub Actions required",
+  "native_emulator_and_hardware": "not run for community port"
+}

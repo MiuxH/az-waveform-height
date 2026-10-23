@@ -1,0 +1,10 @@
+AZ-MODS community port by MiuxH, prepared 2026-10-23.
+GPL-3.0-only; see LICENSE.
+
+height_model.h is the existing V4 layout model from this project, based on
+Kyle-Hosman/xdj-az-mods commit 3e0c5cb010454228f4ee63226b60d060494eeaae.
+height.c is the independent SDK adapter and settings screen.
+The SDK ABI header and Makefile originate in Kyle-Hosman/az-mods-sdk,
+commit 3dcaf8f7331ea94135d7161f653edfaf906d5ea6, under GPL-3.0-only.
+The icon and mask are original simple waveform bars; no deck artwork is used.
+firmware.h contains factual addresses and the firmware tag, no firmware bytes.
