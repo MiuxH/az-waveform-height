@@ -137,37 +137,53 @@ static void toggle(void) {
     __atomic_store_n(&enabled,value,__ATOMIC_RELEASE);
     C->cfg_set(MOD_ID,"enabled",value);C->request_redraw();
 }
+struct page_layout {int x,w,enable_y,enable_h,label_y,font,slider_y,slider_h;};
+static int page_layout(az_rect r,struct page_layout *p) {
+    /* The host already drew the page header, mod info and management buttons.
+     * Only the remaining rectangle is ours; it can be well below 450px high. */
+    if(r.w<240 || r.h<128)return 0;
+    int small=r.h<220,pad=r.w<480?12:24;
+    *p=(struct page_layout){.x=r.x+pad,.w=r.w-2*pad,
+        .enable_y=r.y+(small?8:12),.enable_h=small?32:40,
+        .label_y=r.y+(small?48:64),.font=small?20:26,
+        .slider_y=r.y+(small?82:112),.slider_h=small?40:52};
+    return 1;
+}
 static void draw(az_draw *d,az_rect r,void *user) {
     (void)user;area=r;
-    if(r.w<320 || r.h<450)return;
+    struct page_layout p;if(!page_layout(r,&p))return;
     uint32_t text=C->color(AZ_COL_TEXT),hi=C->color(AZ_COL_HI),dim=C->color(AZ_COL_TEXT_DIM);
-    C->draw_header(d,"4-Deck Waveform Height");
-    int x=r.x+24,y=r.y+90,w=r.w-48;
-    C->draw_checkbox(d,x,y,36,__atomic_load_n(&enabled,__ATOMIC_ACQUIRE),0);
-    C->draw_text(d,x+54,y,"Enable",26,text);
+    int x=p.x,w=p.w,box=p.enable_h-4;
+    C->draw_checkbox(d,x,p.enable_y,box,__atomic_load_n(&enabled,__ATOMIC_ACQUIRE),0);
+    C->draw_text(d,x+box+14,p.enable_y,"Enable",p.font,text);
     int amount=__atomic_load_n(&level,__ATOMIC_ACQUIRE);char label[64];
     snprintf(label,sizeof label,"Height: %d%%",amount*10);
-    C->draw_text(d,x,y+74,label,28,text);
-    C->fill_rect(d,x,y+146,w,8,dim);
-    C->fill_rect(d,x,y+146,w*amount/10,8,hi);
-    for(int i=0;i<=10;i++)C->fill_rect(d,x+(w-2)*i/10,y+137,2,26,dim);
-    C->fill_rect(d,x+(w-24)*amount/10,y+128,24,44,hi);
-    C->draw_text(d,x,y+194,"Original",20,dim);
-    C->draw_text(d,x+w-140,y+194,"Maximum",20,dim);
-    C->draw_text(d,x,y+242,w>=840?"Tap the slider or turn the browse knob. BACK returns.":"Tap / knob, BACK.",20,text);
-    C->draw_text(d,x,y+280,w>=700?"Changes only the native 4-DECK waveform layout.":"4-DECK only.",18,dim);
+    C->draw_text(d,x,p.label_y,label,p.font,text);
+    int track_x=x+12,track_w=w-24,cy=p.slider_y+p.slider_h/2;
+    C->fill_rect(d,track_x,cy-3,track_w,6,dim);
+    C->fill_rect(d,track_x,cy-3,track_w*amount/10,6,hi);
+    for(int i=0;i<=10;i++)C->fill_rect(d,track_x+track_w*i/10-1,cy-10,2,20,dim);
+    C->fill_rect(d,track_x+track_w*amount/10-10,p.slider_y,20,p.slider_h,hi);
+    int labels=p.slider_y+p.slider_h+8;
+    if(labels+27<=r.y+r.h){
+        C->draw_text(d,x,labels,"Original",18,dim);
+        C->draw_text(d,x+w-100,labels,"Maximum",18,dim);
+    }
+    if(labels+67<=r.y+r.h)
+        C->draw_text(d,x,labels+36,w>=700?"Tap the slider or turn the browse knob. BACK returns.":"Tap / knob, BACK.",16,dim);
 }
 static int input(const az_event *e,void *user) {
     (void)user;
     if(e->kind==AZ_EV_BACK)return 0;
-    if(area.w<320 || area.h<450)return 0;
+    struct page_layout p;if(!page_layout(area,&p))return 0;
     if(e->kind==AZ_EV_KNOB){save_level(__atomic_load_n(&level,__ATOMIC_ACQUIRE)+e->dir);return 1;}
     if(e->kind==AZ_EV_CLICK){toggle();return 1;}
     if(e->kind!=AZ_EV_TAP)return 0;
-    int x=area.x+24,y=area.y+90,w=area.w-48;
-    if(e->x<x || e->x>x+w)return 0;
-    if(e->y>=y-8 && e->y<=y+52){toggle();return 1;}
-    if(w>0 && e->y>=y+112 && e->y<=y+190){save_level(((e->x-x)*10+w/2)/w);return 1;}
+    if(e->x<p.x || e->x>=p.x+p.w)return 0;
+    if(e->y>=p.enable_y && e->y<p.enable_y+p.enable_h){toggle();return 1;}
+    if(e->y>=p.slider_y && e->y<p.slider_y+p.slider_h){
+        int width=p.w-24;save_level(((e->x-p.x-12)*10+width/2)/width);return 1;
+    }
     return 0;
 }
 static const az_screen_v1 screen={.size=sizeof(az_screen_v1),.on_draw=draw,.on_input=input};

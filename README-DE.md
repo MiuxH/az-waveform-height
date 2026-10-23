@@ -168,3 +168,14 @@ mit "not inside EP147's data". 0.1.1 behebt diesen Adapterfehler; sein echter
 Emulatorlauf und der Hardware-Test bleiben offen. Die 28 lokalen Fixturechecks
 decken auch hohe Emulatorzeiger und unveraenderte andere Komponenten ab.
 Die aktuellen Paket-Links und Pruefsummen beziehen sich auf 0.1.1.
+
+## 0.1.2: Einstellungsseite unter den Mod-Informationen
+
+0.1.1 wird im Emulator geladen. Seine feste Mindesthoehe von 450 Pixeln
+blendete jedoch die Bedienelemente im vom Host verkleinerten Seitenbereich aus.
+0.1.2 nutzt diesen Bereich bereits ab 240x128 Pixeln, zeichnet keinen zweiten
+Seitenkopf und verwendet eine gemeinsame Berechnung fuer Zeichnung und Touch.
+53 Checks testen unter anderem kompakte Seiten, absolute Touch-Koordinaten,
+alle elf Reglerstufen sowie Enable und Drehknopf. Laufzeittest noch offen.
+Die oben dokumentierten 0.1.1-Artefakte sind historisch; die aktuellen
+0.1.2-Testpakete stehen nach erfolgreichem Build unter Actions.

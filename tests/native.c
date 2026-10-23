@@ -10,6 +10,7 @@ static uintptr_t vt_view[64],vt_box[64],vt_field[64],vt_owner[64],vt_blue[64],vt
 static unsigned char *v,*owners[4],*fields[4];
 static uintptr_t kids[4],fieldkids[4][1];
 static int layouts,heights,bounds,paints,claims,claim_result,registered,current_view=4,official_on;
+static int checking_ui,ui_bounds_bad,ui_draws;
 static void fake_layout(uintptr_t view);
 static void fake_height(uintptr_t owner,int height);
 static void fake_bounds(uintptr_t comp,int x,int y,int w,int h);
@@ -25,6 +26,7 @@ static void fake_bounds(uintptr_t comp,int x,int y,int w,int h);
 #define FW_BOUNDS ((uintptr_t)fake_bounds)
 #define FW_COMPONENT_PAINT ((uintptr_t)0x25d4d30u)
 #include "../height.c"
+static az_rect ui_clip;
 static int checks;
 #define CHECK(name,expr) do{checks++;if(!(expr)){fprintf(stderr,"FAIL %s\n",name);exit(1);}}while(0)
 static void putp(uintptr_t at,int off,uintptr_t p){*(uintptr_t *)(at+off)=p;}
@@ -43,10 +45,11 @@ static const char *bad_tag(void){return "ep147-0000000000000000";}
 static int regscreen(const char *id,const az_screen_v1 *s){(void)id;(void)s;registered++;return 0;}
 static int regrow(const char *id,const az_row_v1 *r){(void)id;(void)r;return 0;}
 static int claim(const char *id,uintptr_t addr,void *fn,void **orig){(void)id;assert(addr==FW_COMPONENT_PAINT);assert(fn);claims++;if(!claim_result)*orig=(void *)fake_paint;return claim_result;}
-static void draw_header(az_draw *d,const char *s){(void)d;(void)s;}
-static void draw_text(az_draw *d,int x,int y,const char *s,int px,uint32_t rgb){(void)d;(void)x;(void)y;(void)s;(void)px;(void)rgb;}
-static void rect(az_draw *d,int x,int y,int w,int h,uint32_t rgb){(void)d;(void)x;(void)y;(void)w;(void)h;(void)rgb;}
-static void checkbox(az_draw *d,int x,int y,int s,int on,int hi){(void)d;(void)x;(void)y;(void)s;(void)on;(void)hi;}
+static void draw_header(az_draw *d,const char *s){(void)d;(void)s;if(checking_ui)ui_bounds_bad++;}
+static void ui_check(int x,int y,int w,int h){if(!checking_ui)return;ui_draws++;if(x<ui_clip.x || y<ui_clip.y || w<0 || h<0 || x+w>ui_clip.x+ui_clip.w || y+h>ui_clip.y+ui_clip.h)ui_bounds_bad++;}
+static void draw_text(az_draw *d,int x,int y,const char *s,int px,uint32_t rgb){(void)d;(void)s;(void)rgb;ui_check(x,y,0,px*3/2);}
+static void rect(az_draw *d,int x,int y,int w,int h,uint32_t rgb){(void)d;(void)rgb;ui_check(x,y,w,h);}
+static void checkbox(az_draw *d,int x,int y,int s,int on,int hi){(void)d;(void)on;(void)hi;ui_check(x,y,s,s);}
 static uint32_t color(int role){(void)role;return 0xffffff;}
 static az_core_v1 core={.abi=AZ_MOD_ABI,.size=sizeof(az_core_v1),.claim_hook=claim,.register_row=regrow,.register_screen=regscreen,.view=service_view,.fw_tag=tag,.row_lookup=lookup,.row_value=value,.cfg_get=get,.cfg_set=set,.request_redraw=redraw,.draw_header=draw_header,.draw_text=draw_text,.fill_rect=rect,.draw_checkbox=checkbox,.color=color};
 static void fixture(void){
@@ -90,11 +93,25 @@ int main(void){
     fixture();paint(v,NULL);set_integer((uintptr_t)v,0x3a8,0);fake_layout((uintptr_t)v);paint(v,NULL);CHECK("leaving four decks restores padding without stale four-deck height",integer((uintptr_t)owners[0],0x50)==16 && integer((uintptr_t)owners[0]+0x198c8,0x2c)==198);release();
     fixture();conflict=1;official_on=1;paint(v,NULL);CHECK("official height mod takes priority",!layouts && !bounds);release();
     area=(az_rect){0,0,1000,600};enabled=0;level=5;
-    az_event e={.kind=AZ_EV_TAP,.x=500,.y=236};input(&e,NULL);CHECK("slider selects midpoint",level==5 && !enabled);
-    e.x=976;input(&e,NULL);CHECK("slider reaches maximum",level==10);
+    struct page_layout page;assert(page_layout(area,&page));
+    az_event e={.kind=AZ_EV_TAP,.x=page.x+page.w/2,.y=page.slider_y+page.slider_h/2};input(&e,NULL);CHECK("slider selects midpoint",level==5 && !enabled);
+    e.x=page.x+page.w-1;input(&e,NULL);CHECK("slider reaches maximum",level==10);
     e.kind=AZ_EV_KNOB;e.dir=1;input(&e,NULL);CHECK("knob clamps maximum",level==10);
     e.kind=AZ_EV_CLICK;input(&e,NULL);CHECK("click toggles only mod enable",enabled==1);
     e.kind=AZ_EV_BACK;CHECK("BACK belongs to host navigation",input(&e,NULL)==0);
+    const az_rect pages[]={{0,0,1280,600},{0,340,1280,360},{280,430,980,312},{20,520,600,180},{0,0,240,128}};
+    for(unsigned n=0;n<sizeof(pages)/sizeof(pages[0]);n++){
+        ui_clip=pages[n];checking_ui=1;ui_bounds_bad=ui_draws=0;enabled=0;level=0;
+        draw(NULL,pages[n],NULL);checking_ui=0;
+        CHECK("settings fit compact host-owned area and do not redraw host header",ui_draws>0 && ui_bounds_bad==0);
+        assert(page_layout(area,&page));e=(az_event){.kind=AZ_EV_TAP,.x=page.x+40,.y=page.enable_y+page.enable_h/2};input(&e,NULL);
+        CHECK("Enable remains touchable below mod metadata",enabled==1 && level==0);
+        e.y=page.slider_y+page.slider_h/2;
+        for(int i=0;i<=10;i++){e.x=page.x+12+(page.w-24)*i/10;input(&e,NULL);assert(level==i);}
+        CHECK("all eleven slider values reachable at compact absolute origins",level==10);
+        e.kind=AZ_EV_KNOB;e.dir=-1;input(&e,NULL);CHECK("compact browse knob changes height",level==9 && enabled==1);
+        e=(az_event){.kind=AZ_EV_TAP,.x=area.x-1,.y=page.slider_y};input(&e,NULL);CHECK("tap outside the page changes nothing",level==9 && enabled==1);
+    }
     fixture();pthread_t ui,native;
     CHECK("settings/native fixture threads start",!pthread_create(&ui,NULL,change_settings,NULL) && !pthread_create(&native,NULL,native_frames,NULL));
     pthread_join(ui,NULL);pthread_join(native,NULL);__atomic_store_n(&enabled,0,__ATOMIC_RELEASE);paint(v,NULL);
