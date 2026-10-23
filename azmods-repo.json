@@ -3,5 +3,28 @@
   "name": "MiuxH AZ Mods",
   "maintainer": "MiuxH",
   "homepage": "https://github.com/MiuxH/az-waveform-height",
-  "mods": []
+  "mods": [
+    {
+      "id": "miuxh-wave-height",
+      "name": "4-Deck Waveform Height",
+      "version": "0.1.2",
+      "author": "MiuxH",
+      "summary": "Adjust the native four-deck waveform height from original to nearly touching.",
+      "icon": "https://github.com/MiuxH/az-waveform-height/releases/download/miuxh-wave-height-0.1.2/miuxh-wave-height-0.1.2-icon.png",
+      "package": "https://github.com/MiuxH/az-waveform-height/releases/download/miuxh-wave-height-0.1.2/miuxh-wave-height-0.1.2.azmod",
+      "sha256": "b224b94c93dcf451f524943cecf106ba003b6f65ca0147d44c07589e1f1774c3",
+      "size": 63690,
+      "firmware": [
+        "ep147-9e9454e357389ece"
+      ],
+      "hooks": true,
+      "source": "https://github.com/MiuxH/az-waveform-height",
+      "updated": "2026-10-23",
+      "category": "visual",
+      "license": "GPL-3.0-only",
+      "min_core": "1.2.3",
+      "description": "Independent community mod for EP147 2.00. Adds Enable and eleven 0-100% waveform-height steps in the native four-deck view. Uses a firmware-specific code hook on the native component paint dispatcher; preserves native grid heights and restores original geometry when disabled. Settings persist through the core configuration service. No network access, direct file writes or audio changes. User-tested in the emulator and on a real XDJ-AZ with AZ-MODS 1.2.5.",
+      "beta": true
+    }
+  ]
 }
