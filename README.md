@@ -32,3 +32,5 @@ for drawing and hit testing, and does not draw a second host header.
 The 0.1.1 native hook loaded in the user's emulator. 53 fixture checks cover
 compact pages, nonzero origins, all slider steps, Enable and knob actions.
 The fixed settings page still needs the user's touch test.
+
+[Validated 0.1.2 test package](https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235/artifacts/12530864092).

@@ -5,7 +5,7 @@ Sie erweitert die Hoehe der nativen Waveforms in der normalen 4-DECK-Ansicht,
 von Original bis fast aneinander. Die nativen Beatgrids behalten ihre Hoehe.
 Blue, RGB und 3 Band benutzen weiterhin die originalen AZ-Zeichner.
 
-**Status: experimenteller SDK-Port 0.1.1.** Der ARM64-Build und der offizielle
+**Status: experimenteller SDK-Port 0.1.2.** Der ARM64-Build und der offizielle
 Paketvalidator sind bestanden. [Testpaket herunterladen](https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643/artifacts/12529959088).
 0.1.0 scheiterte im Emulator beim Initialisieren; der korrigierte 0.1.1-Port
 muss noch im Emulator und auf dem echten Deck getestet werden. Es gibt kein
@@ -179,3 +179,5 @@ Seitenkopf und verwendet eine gemeinsame Berechnung fuer Zeichnung und Touch.
 alle elf Reglerstufen sowie Enable und Drehknopf. Laufzeittest noch offen.
 Die oben dokumentierten 0.1.1-Artefakte sind historisch; die aktuellen
 0.1.2-Testpakete stehen nach erfolgreichem Build unter Actions.
+
+Aktueller ARM64-Build und Paketvalidator bestanden: [0.1.2-Testpaket](https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235/artifacts/12530864092).
