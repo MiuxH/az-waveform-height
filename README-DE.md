@@ -1,183 +1,58 @@
-# MiuxH – 4-Deck Waveform Height
+# MiuxH – 4-Deck Waveform Height 0.1.2 Beta
 
-Eigenstaendige Community-Mod fuer den offiziellen AZ-MODS-Core ab 1.2.3.
-Sie erweitert die Hoehe der nativen Waveforms in der normalen 4-DECK-Ansicht,
-von Original bis fast aneinander. Die nativen Beatgrids behalten ihre Hoehe.
-Blue, RGB und 3 Band benutzen weiterhin die originalen AZ-Zeichner.
+Eigenstaendige Community Mod fuer die native Vierdeck-Ansicht des XDJ-AZ.
+Enable schaltet sie ein; elf Hoehenstufen reichen von 0 Prozent (Original)
+bis 100 Prozent (fast aneinander). Native Farben und Beatgrid-Hoehen bleiben erhalten.
 
-**Status: experimenteller SDK-Port 0.1.2.** Der ARM64-Build und der offizielle
-Paketvalidator sind bestanden. [Testpaket herunterladen](https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643/artifacts/12529959088).
-0.1.0 scheiterte im Emulator beim Initialisieren; der korrigierte 0.1.1-Port
-muss noch im Emulator und auf dem echten Deck getestet werden. Es gibt kein
-Katalog-Release. Den alten Testpaket-Link fuer 0.1.0 nicht mehr verwenden.
+## Installation direkt am Deck
 
-## Fuer deinen ersten Test
+1. Firmware **2.00** und offizielle **AZ-MODS 1.2.5** verwenden.
+2. Community Mods > Repositories > Add: **MiuxH/az-waveform-height**.
+3. Browse > 4-Deck Waveform Height > Install > Reload now.
+4. Einstellungsseite oeffnen, Enable einschalten und Hoehe waehlen.
 
-1. Den nach deinem Update vorhandenen **offiziellen Core beibehalten**.
-   Weder azmod.so noch azmod-core.so werden durch dieses Projekt ersetzt.
-   Die Entwicklerfreigabe fuer einen unsignierten Core ist nicht erforderlich.
-2. ZIP in einen eigenen Ordner az-waveform-height entpacken. Docker Desktop
-   starten und **Community-Mod-bauen.bat** doppelklicken. Python und Git muessen
-   vorhanden sein. Git unter C:\Program Files\Git wird ebenfalls gefunden.
-3. Das Werkzeug holt den genau festgelegten offiziellen SDK-Commit, baut in
-   dessen ARM64-Container, fuehrt den offiziellen Paketvalidator aus und erzeugt
-   **dist/miuxh-wave-height-0.1.1.azmod**. Ein falscher Host-/x86-Build wird vom
-   Validator abgelehnt. Es werden keine Firmware-Assets benoetigt.
-4. Diese .azmod-Datei ist ein ZIP. Mit 7-Zip in einen Ordner entpacken oder eine
-   Kopie in .zip umbenennen. Die vier Dateien azmod.json, miuxh-wave-height.so,
-   icon.png und LICENSE gehoeren direkt unter:
+Bei manueller USB-Kopie fragt das Deck unter Installed einmal nach Allow.
+Die offizielle Einstellung `four-waveforms` fuer unseren Hoehentest ausschalten:
+unsere Mod gibt ihr sonst Vorrang. Community-Mod deaktivieren und Reload now,
+um sie vollstaendig zu entladen. Der offizielle Core wird nicht ersetzt.
 
-   `USB:/MODS/community-mods/miuxh-wave-height/`
+## Bestaetigter Teststand, 23.10.2026
 
-5. In der vorhandenen USB-Datei MODS/azmods.cfg die folgende eigene Zeile
-   hinzufuegen bzw. ihren bestehenden Wert auf on setzen; andere Zeilen behalten:
+Der Autor bestaetigte im Emulator Bedienung, Hoehenstufen, Grid/Marker und
+Wechsel zwischen 2 und 4 Decks. Anschliessend bestaetigte er die Funktion auf
+dem echten XDJ-AZ mit Firmware 2.00 und AZ-MODS 1.2.5.
+Der Hardware-Test erfolgte mit dem manuell kopierten 0.1.2-Testpaket.
+Die Installation ueber das veroeffentlichte Repository ist noch separat zu pruefen.
+Keine instrumentierte FPS-Messung, kein Langzeittest und kein detaillierter
+Hardware-Testbericht pro Farbmodus liegen vor. Deshalb bleibt der Stand Beta.
 
-   ```ini
-   community-mods.miuxh-wave-height = on
-   ```
+53 native Fixturechecks bestanden in plain, ASan/UBSan und TSan.
+Leak-Pruefung war wegen Prozesssichtbeschraenkungen abgeschaltet.
+Der ARM64-Build und offizielle Paketvalidator bestanden.
+Das generische SDK-Harness fuer services-only Mods deckt diesen nativen Hook
+nicht ab; dieses Projekt nutzt eigene native Objekt- und SDK-Fixtures.
 
-6. Stick sicher auswerfen und AZ damit neu starten. Unter
-   **SOURCE > MOD MENU > Community Mods > Installed > 4-Deck Waveform Height**
-   den neuen Build mit **Allow** bestaetigen, danach **Reload now**.
-   Das Deck genehmigt genau den Hash dieser eigenen Mod-Datei; der Core bleibt
-   offiziell. Reload now schliesst die laufenden Tracks, also vorher stoppen.
-7. Die eigene Einstellungsseite oeffnen: **Enable** einschalten und **Height**
-   einstellen. Der Regler ist durch Antippen auf 0, 10, ... 100 Prozent oder
-   mit dem Browse-Drehknopf bedienbar. Knopfdruck schaltet Enable um; BACK geht
-   zurueck. Die Werte werden ueber SDK cfg_get/cfg_set gespeichert.
+## Technische Grenzen und Verhalten
 
-Die aktuelle SDK-Menue-Seite liefert TAP und Drehknopf-Ereignisse, aber keinen
-kontinuierlichen MOVE-Strom wie die alte Core-Menueimplementierung. Deshalb wird
-hier kein durchgehendes Finger-Ziehen behauptet. Die Reglerwerte selbst bleiben
-die gleichen elf Stufen wie in V4. Die eigene Hauptmenue-Zeile hat ein Waveform-Icon.
+Nur Firmware-Tag `ep147-9e9454e357389ece` ist zugelassen.
+Firmware-spezifischer Code-Hook am nativen Component-Paint-Dispatcher, auf
+WaveformView begrenzt. Keine Umgehung der SDK-Bereichs- und Besitzpruefungen.
+Die offiziellen Waveform-/FPS-Hooks bleiben in der Aufrufkette.
+Unbekannte Layouts fuehren zu keinen Geometrie-Schreibzugriffen.
+Kein Netzwerkzugriff, keine direkten Dateizugriffe, keine Audioaenderungen.
+Enable und Hoehe werden ueber den Konfigurationsdienst des offiziellen Core gespeichert.
+Die Seite unterstuetzt Tippen und Drehknopf, keinen kontinuierlichen Touch-Drag.
 
-Nur dieser EP147-Build wird zugelassen:
+## Selbst bauen und veroeffentlichen
 
-- bekannt als Firmware 2.00, MD5 8daa1de55d7328f458f6d855cdc3cdde;
-- SDK-Tag **ep147-9e9454e357389ece**;
-- ein anderer Tag wird abgelehnt; niemals "any" fuer diese native Layoutmod.
-
-Auf dem Deck steht der Tag unten unter Community Mods > Repositories. Ein
-offizielles AZ-MODS-Core-Update ersetzt diese separate Community-Datei nicht.
-Andere Firmware kann jedoch einen neuen Port benoetigen; ein Core-Update kann
-einen Hook-Konflikt verursachen, der dann sauber abgelehnt werden muss.
-
-## Veroeffentlichung fuer andere DJs
-
-Oeffentliches Quellcode-Repository: **MiuxH/az-waveform-height**. azmods-repo.json ist zunaechst absichtlich
-leer: Es gibt noch keinen echten Download, dessen Groesse und SHA256 eingetragen
-werden koennten. Es enthaelt keine Platzhalter-Pakete oder erfundenen Pruefsummen.
-
-Der einfachste Weg aus diesem Chat ist die GitHub-Anbindung an dein Konto MiuxH.
-Alternativ kannst du **GitHub-Projekt-anlegen.bat** lokal starten. Das Skript
-verwendet GitHub CLI, prueft das angemeldete Konto, legt nur ein neues oeffentliches
-MiuxH/az-waveform-height an und ueberschreibt kein bestehendes Repository.
-Falls GitHub CLI fehlt: `winget install --id GitHub.cli -e`, dann Terminal neu
-oeffnen. Die Anmeldung erfolgt mit `gh auth login` im Browser. Kein Token oder
-Schluessel gehoert in diese Quelldateien.
-
-Der erste Push startet unter **GitHub > Actions > build-test-package** automatisch
-Tests und den ARM64-Build. Das Artefakt **miuxh-wave-height-test** enthaelt das
-Testpaket. Es ist noch kein Release und wird noch nicht vom Deck-Katalog angeboten.
-
-Nach dem echten Laufzeittest und einem Commit seiner Ergebnisse:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Publish.ps1 -Release
-```
-
-Der Tag miuxh-wave-height-0.1.1 startet den offiziellen SDK-Release-Ablauf:
-Build, Validator, .azmod-Paket und Icon als GitHub-Release, danach ein Commit mit
-dem echten Paket-URL, SHA256 und Groesse in azmods-repo.json. Der erste Stand wird
-als experimentelles Prerelease markiert. Actions muss den Repository-Inhalt
-schreiben duerfen; ein Branch-Schutz kann den letzten Index-Commit blockieren.
-Das Ergebnis unter Actions pruefen, bevor du den Repository-Namen weitergibst.
-
-Danach koennen andere am Deck unter **Community Mods > Repositories > Add**
-`MiuxH/az-waveform-height` hinzufuegen und die Mod unter Browse installieren.
-Damit sie ohne Hinzufuegen standardmaessig erscheint, muss dieses Repository
-zusaetzlich per Pull Request in **Kyle-Hosman/az-mods-index** aufgenommen werden.
-Das erfordert die Pruefung und Freigabe der Projektbetreiber; sie wird hier nicht
-vorweggenommen. Quellcode, Lizenz und echte Testresultate gehoeren dazu.
-
-## Zurueck und Kompatibilitaet
-
-- Eigenes Enable aus oder Height 0 stellt die native Geometrie wieder her,
-  sobald die normale Waveform-Ansicht zeichnet.
-- Community-Mod abschalten und die Aenderung mit Reload now anwenden startet
-  EP147 ohne ihren Hook. Es muss kein gesicherter Core zurueckkopiert werden.
-- Das Projekt schreibt weder Musik/Library noch Audio- oder Beat-FX-Parameter.
-  Der physische Beat-FX-Bereich wird nicht verschoben oder neu gezeichnet.
-- Falls ein Core bereits die alte integrierte Hoehenmod aktiv hat, bekommt diese
-  Vorrang; diese Community-Mod macht dann keine konkurrierenden Hoehenaenderungen.
-  Der vorgesehene Testpartner ist der unveraenderte offizielle Core.
-- Ein bereits belegter nativer Zeichnungsdispatcher wird ueber das SDK
-  abgelehnt, nicht selbst ueberschrieben. Eine generelle Kompatibilitaet mit anderen Layoutmods ist damit
-  nicht bestaetigt. Die spaetere CDJ-Player-View-Mod gehoert nicht zu diesem Paket.
-
-## Technischer Stand / Checks
-
-Native Schnittstelle ab 0.1.1: SDK claim_hook an
-Component::paintComponentAndChildren (Firmware 2.00: 0x25d4d30), gefiltert auf
-die genaue WaveformView-Vtable. Die Funktion ruft den nativen paint-Slot,
-danach die Kinder und paintOverChildren auf. Jeder Originalaufruf bleibt
-bestehen; die offiziellen WaveformView-/FPS-Hooks werden nicht ersetzt.
-0.1.0 scheiterte mit init=5: Die SDK-Datenbereichspruefung lehnt die Vtable in
-EP147s ausfuehrbarem .rodata-Segment ab. Eine Verschiebung der Hauptprogramm-
-Adresse war nicht die Ursache. Die SDK-Pruefung bleibt unveraendert.
-Zusaetzlich akzeptiert die Zeigerpruefung jetzt hohe 48-Bit-Userspace-Adressen
-im Emulator. Kerneladressen und ungerade Pointer bleiben ausgeschlossen.
-
-Native Objekte werden nur waehrend dieses EP147-Message-Thread-Callbacks aus dem
-aktuellen JUCE-Kinderbaum gelesen, mit Vtables, Parent-Verbindungen, nativer
-virtueller Basis und eindeutigen Decknummern geprueft. Nach einem Relayout werden
-alle Kinder neu gelesen. Die Layoutmodelle speichern nur Identitaetswerte und
-Zahlen; keine spaeter dereferenzierten Komponentenpointer. Unvollstaendige
-Viererlayouts, unbekannte Decks und zu kleine Raster werden vor Schreibzugriffen
-abgelehnt. Keine Datei-/Netzwerkzugriffe, Threads oder Allokationen im Paint-Hook.
-
-Lokal bestanden: **28 Adapter-/SDK-/Touch-Checks jeweils plain, ASan/UBSan und
-TSan**, einschliesslich gleichzeitiger Einstellungswechsel und nativer Frames.
-Ein separater Host-Link mit versteckten Symbolen exportiert nur
-az_mod_v1_entry. Das generische SDK-Harness verlangt services-only/"any" und
-eignet sich deshalb nicht unveraendert fuer diesen nativen Hook-Port; make test
-verwendet die eigenen SDK- und nativen Objektfixtures. LeakSanitizer ist hier
-wegen Prozesssichtbeschraenkungen ausgeschaltet.
-
-ARM64-Build, offizieller Gesamt-Paketvalidator und Paketerstellung in GitHub
-Actions bestanden. Paket 0.1.1: 63 594 Bytes, SHA256
-`fb4cb8da221c6d4c3d19ff40b3ebaa59d13b69cab21209adf90bd4a6a0e36c89`.
-Noch offen: Emulatorlauf und echter AZ-Test. Die Hosttests verwenden simulierte Objekte und
-beweisen keine native Laufzeitstabilitaet. Der oeffentliche Mod Index sollte erst
-nach diesen Nachweisen beantragt werden. Die CI-Tests ersetzen keinen Audio-Test.
-
-Abnahme auf einem Test-Deck: alle elf Stufen, Ein/Aus und 0 Prozent; Blue/RGB/3Band;
-alle vier Decks inkl. leere Decks; Track laden/wechseln bei 100 Prozent;
-2/4-DECK-Wechsel; SOURCE/INFO zurueck; langer Wiedergabelauf; Beat FX und Stems;
-Neustart mit gespeicherten Werten; Deaktivieren der Community-Mod. Ergebnisse
-mit Firmware-Tag und Core-Version dokumentieren.
-
-GPL-3.0-only, siehe LICENSE und NOTICE. Keine Firmware, Assets, Musik, privaten
-Captures oder Zugangsdaten enthalten. SDK-Commit:
+Community-Mod-bauen.bat verwendet den festgelegten offiziellen SDK-Commit
 3dcaf8f7331ea94135d7161f653edfaf906d5ea6.
+Tests: `python3 tests/run.py --passes plain asan tsan`.
+Ein Release-Tag `miuxh-wave-height-0.1.2` startet den Release-Workflow.
+Der Workflow baut und validiert das Paket, veroeffentlicht es als Prerelease
+und aktualisiert azmods-repo.json mit echter Groesse und SHA256.
+Die erste Beta kann auch ueber release-request.json auf main angefordert werden.
 
-## Teststand 0.1.1
-
-0.1.0 wurde im Emulator gefunden und freigegeben, scheiterte aber beim Hook
-mit "not inside EP147's data". 0.1.1 behebt diesen Adapterfehler; sein echter
-Emulatorlauf und der Hardware-Test bleiben offen. Die 28 lokalen Fixturechecks
-decken auch hohe Emulatorzeiger und unveraenderte andere Komponenten ab.
-Die aktuellen Paket-Links und Pruefsummen beziehen sich auf 0.1.1.
-
-## 0.1.2: Einstellungsseite unter den Mod-Informationen
-
-0.1.1 wird im Emulator geladen. Seine feste Mindesthoehe von 450 Pixeln
-blendete jedoch die Bedienelemente im vom Host verkleinerten Seitenbereich aus.
-0.1.2 nutzt diesen Bereich bereits ab 240x128 Pixeln, zeichnet keinen zweiten
-Seitenkopf und verwendet eine gemeinsame Berechnung fuer Zeichnung und Touch.
-53 Checks testen unter anderem kompakte Seiten, absolute Touch-Koordinaten,
-alle elf Reglerstufen sowie Enable und Drehknopf. Laufzeittest noch offen.
-Die oben dokumentierten 0.1.1-Artefakte sind historisch; die aktuellen
-0.1.2-Testpakete stehen nach erfolgreichem Build unter Actions.
-
-Aktueller ARM64-Build und Paketvalidator bestanden: [0.1.2-Testpaket](https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235/artifacts/12530864092).
+Die Aufnahme in Kyle-Hosman/az-mods-index ist ein separater Review-Prozess.
+Ohne Aufnahme koennen Benutzer das Repository bereits selbst hinzufuegen.
+GPL-3.0-only, siehe LICENSE und NOTICE. Keine Firmware, Musik oder Schluessel enthalten.

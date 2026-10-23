@@ -5,7 +5,7 @@
   "version": "0.1.2",
   "author": "MiuxH",
   "summary": "Adjust the native four-deck waveform height from original to nearly touching.",
-  "description": "Experimental independent port of the V4 height mod for EP147 2.00. Adds Enable and a 0-100% height control. Uses a firmware-specific native component paint-dispatch hook to adjust only the four-deck layout; keeps native grid heights and restores original geometry when disabled. Does not replace the AZ-MODS core or change audio. Native/emulator runtime testing of this community port is still pending.",
+  "description": "Independent community mod for EP147 2.00. Adds Enable and eleven 0-100% waveform-height steps in the native four-deck view. Uses a firmware-specific code hook on the native component paint dispatcher; preserves native grid heights and restores original geometry when disabled. Settings persist through the core configuration service. No network access, direct file writes or audio changes. User-tested in the emulator and on a real XDJ-AZ with AZ-MODS 1.2.5.",
   "license": "GPL-3.0-only",
   "source": "https://github.com/MiuxH/az-waveform-height",
   "api": 1,

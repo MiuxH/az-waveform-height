@@ -1,36 +1,36 @@
-# MiuxH Waveform Height
+# MiuxH – 4-Deck Waveform Height
 
-Experimental independent AZ-MODS community mod, version 0.1.2.
-Adds Enable and 0–100% native waveform height in the four-deck view.
-Keeps the official AZ-MODS core, native colours and grid heights.
+Independent AZ-MODS community mod, version **0.1.2 beta**.
+Adjust the native four-deck waveform height from original to nearly touching,
+with Enable and eleven 0–100% steps. Preserves native colours and beatgrid heights.
+The official AZ-MODS core remains installed.
 
-Firmware: `ep147-9e9454e357389ece` (EP147 2.00). Core: 1.2.3 or newer.
-Author: MiuxH. GPL-3.0-only; see LICENSE and NOTICE.
-[Builds and test packages](https://github.com/MiuxH/az-waveform-height/actions).
-See [README-DE.md](README-DE.md) for installation and test details.
+## Install on the deck
 
-## 0.1.1 correction
+Community Mods > Repositories > Add: **MiuxH/az-waveform-height**.
+Then Browse > 4-Deck Waveform Height > Install > Reload now.
+Open the mod settings, turn Enable on and choose a height.
+If the built-in `four-waveforms` setting is active, this mod yields to it.
 
-0.1.0 failed initialization with code 5: EP147 stores its vtables in an RX
-.rodata segment, which the SDK correctly excludes from its data-only vslot
-service. 0.1.1 uses the supported code-hook service at the verified native
-Component::paintComponentAndChildren dispatcher, filtered to WaveformView.
-The official core's waveform paint and FPS hooks remain in the call chain.
-No SDK range or ownership check is bypassed. High 48-bit emulator userspace
-addresses are now accepted; kernel and unaligned pointers remain rejected.
+Firmware: **EP147 2.00**, exact tag `ep147-9e9454e357389ece`.
+Tested core: **AZ-MODS 1.2.5** (manifest minimum 1.2.3).
 
-28 fixture checks passed in plain, ASan/UBSan and TSan. The 0.1.1 ARM64 build and official package validator passed.
-[Test package](https://github.com/MiuxH/az-waveform-height/actions/runs/40021689643/artifacts/12529959088). Emulator and hardware runtime
-verification remain pending. No public mod-catalog release yet.
+## Test status
 
-## 0.1.2 compact settings page
+On 2026-10-23 the author reported successful emulator settings, waveform geometry,
+grid/marker and 2/4-deck switching checks, then confirmed operation on a real XDJ-AZ.
+The real-deck test used the manually copied 0.1.2 test package, not yet the repository install route.
+No instrumented hardware FPS, long-duration or per-theme hardware report was supplied.
+53 native fixture checks passed in plain, ASan/UBSan and TSan; leak inspection disabled.
+ARM64 build and official package validator passed. See TEST-STATUS.json.
 
-The host draws the menu header, mod information and management buttons before
-assigning the settings rectangle. The 450px minimum in 0.1.1 hid controls in
-that smaller area. 0.1.2 fits rectangles from 240x128px, uses the same layout
-for drawing and hit testing, and does not draw a second host header.
-The 0.1.1 native hook loaded in the user's emulator. 53 fixture checks cover
-compact pages, nonzero origins, all slider steps, Enable and knob actions.
-The fixed settings page still needs the user's touch test.
+## Technical scope
 
-[Validated 0.1.2 test package](https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235/artifacts/12530864092).
+Uses the SDK code-hook service at the firmware-specific native component paint
+dispatcher, filtered to WaveformView. Does not bypass SDK ownership/range checks.
+Retains the official waveform/FPS paint chain. Unknown layouts cause no geometry writes.
+No network access, direct file writes or audio changes. Enable and height persist
+through the official core configuration service. Disable to restore native geometry.
+
+Author: **MiuxH**. GPL-3.0-only, see LICENSE and NOTICE.
+[German instructions](README-DE.md) · [Releases](https://github.com/MiuxH/az-waveform-height/releases)

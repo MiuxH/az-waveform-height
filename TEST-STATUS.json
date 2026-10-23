@@ -1,5 +1,5 @@
 {
-  "status": "experimental-arm64-compact-settings-fix",
+  "status": "beta-user-tested-emulator-and-real-az",
   "version": "0.1.2",
   "author": "MiuxH",
   "repository": "https://github.com/MiuxH/az-waveform-height",
@@ -12,11 +12,12 @@
   "official_manifest_icon": "passed",
   "repository_catalog": "passed (empty before release)",
   "arm64_build": "passed for 0.1.2",
-  "native_emulator_and_hardware": "0.1.1 loads in user emulator, settings page height guard blocked controls; 0.1.2 runtime pending",
+  "native_emulator_and_hardware": "User reported emulator settings and geometry/mode checks passed, then confirmed operation on real XDJ-AZ; firmware 2.00 and AZ-MODS 1.2.5. No instrumented hardware performance or long-duration test supplied.",
   "source_published": true,
   "official_package_validator": "passed for 0.1.2",
   "workflow_run": "https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235",
   "test_artifact": "https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235/artifacts/12530864092",
   "package_sha256": "72444ba7b67a4d091eba7617f7eee1aba3a21712fd9b410f42befe76e427c392",
-  "package_size": 63634
+  "package_size": 63634,
+  "user_acceptance_date": "2026-10-23"
 }

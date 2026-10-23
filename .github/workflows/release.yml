@@ -16,6 +16,8 @@ on:
   push:
     # this mod's tags only; a repository with several mods keeps just "miuxh-wave-height-*" here
     tags: ["miuxh-wave-height-*", "v*"]
+    branches: [main]
+    paths: [release-request.json]
 
 permissions:
   contents: write          # create the release and (optionally) commit the repository file
@@ -67,12 +69,25 @@ jobs:
       - name: Build the SDK container
         run: python3 .azmod-sdk/tools/azmod-pack image
 
+      - name: Select release tag
+        run: |
+          python3 - <<'PYCODE'
+          import json, os
+          m = json.load(open("azmod.json"))
+          tag = os.environ["GITHUB_REF_NAME"] if os.environ["GITHUB_REF_TYPE"] == "tag" else f"{m['id']}-{m['version']}"
+          if os.environ["GITHUB_REF_TYPE"] != "tag":
+              request = json.load(open("release-request.json"))
+              assert request["version"] == m["version"] and request["hardware_accepted"] is True
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write(f"RELEASE_TAG={tag}\n")
+          PYCODE
+
       - name: Check the tag matches azmod.json
         run: |
           python3 - <<'PY'
           import json, os, sys
           m = json.load(open(os.path.join(os.environ["MOD_DIR"], "azmod.json")))
-          tag = os.environ["GITHUB_REF_NAME"]
+          tag = os.environ["RELEASE_TAG"]
           ok = (f"{m['id']}-{m['version']}", f"v{m['version']}")
           if tag not in ok:
               sys.exit(f"tag {tag} does not match azmod.json; expected one of {ok}")
@@ -84,16 +99,16 @@ jobs:
       - name: Package
         run: |
           python3 .azmod-sdk/tools/azmod-pack package "$MOD_DIR" --out dist \
-            --github "$GITHUB_REPOSITORY" --tag "$GITHUB_REF_NAME"
+            --github "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
 
       - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
-            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "Experimental community mod; see README-DE.md for supported firmware and test status." --prerelease
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || \
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --target "$GITHUB_SHA" --notes "Beta: native four-deck waveform height control. User-tested in the emulator and on a real XDJ-AZ, firmware 2.00 / AZ-MODS 1.2.5. See README-DE.md and TEST-STATUS.json for scope and limitations." --prerelease
           shopt -s nullglob   # a mod without screenshots has no dist/*-shot*.png
-          gh release upload "$GITHUB_REF_NAME" dist/*.azmod dist/*-icon.png dist/*-shot*.png --clobber
+          gh release upload "$RELEASE_TAG" dist/*.azmod dist/*-icon.png dist/*-shot*.png --clobber
 
       - name: The azmods-repo.json entry
         run: cat dist/*.entry.json
@@ -108,5 +123,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add azmods-repo.json
-          git commit -m "azmods-repo.json: $GITHUB_REF_NAME"
+          git commit -m "azmods-repo.json: $RELEASE_TAG"
           git push origin "$branch"

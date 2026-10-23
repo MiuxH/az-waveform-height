@@ -27,8 +27,10 @@ try {
     if ($Release) {
         $status = (& git status --porcelain) -join "`n"
         if ($status) { throw 'Bitte Aenderungen zuerst committen. Release abgebrochen.' }
-        Checked 'git' @('tag','miuxh-wave-height-0.1.0')
-        Checked 'git' @('push','origin','miuxh-wave-height-0.1.0')
+        $manifest = Get-Content -Raw -LiteralPath 'azmod.json' | ConvertFrom-Json
+        $tag = $manifest.id + '-' + $manifest.version
+        Checked 'git' @('tag',$tag)
+        Checked 'git' @('push','origin',$tag)
         Write-Host 'Release-Build gestartet. Ergebnis unter GitHub > Actions pruefen.'
     } else {
         & gh repo view 'MiuxH/az-waveform-height' *> $null
