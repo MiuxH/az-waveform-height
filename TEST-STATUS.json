@@ -3,7 +3,7 @@
   "version": "0.1.2",
   "author": "MiuxH",
   "repository": "https://github.com/MiuxH/az-waveform-height",
-  "published": false,
+  "published": true,
   "firmware_tag": "ep147-9e9454e357389ece",
   "host_native_checks": 53,
   "host_plain": "passed",
@@ -19,5 +19,11 @@
   "test_artifact": "https://github.com/MiuxH/az-waveform-height/actions/runs/40023496235/artifacts/12530864092",
   "package_sha256": "72444ba7b67a4d091eba7617f7eee1aba3a21712fd9b410f42befe76e427c392",
   "package_size": 63634,
-  "user_acceptance_date": "2026-10-23"
+  "user_acceptance_date": "2026-10-23",
+  "public_release": "https://github.com/MiuxH/az-waveform-height/releases/tag/miuxh-wave-height-0.1.2",
+  "release_workflow": "https://github.com/MiuxH/az-waveform-height/actions/runs/40028269532",
+  "public_package_sha256": "b224b94c93dcf451f524943cecf106ba003b6f65ca0147d44c07589e1f1774c3",
+  "public_package_size": 63690,
+  "public_library_matches_hardware_test": true,
+  "repository_install_on_real_deck": "pending"
 }
