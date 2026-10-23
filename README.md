@@ -1,15 +1,24 @@
 # MiuxH Waveform Height
 
-Experimental independent AZ-MODS community port of the V4 four-deck height mod.
-Adds an Enable switch and 0–100% height control while retaining native waveform
-rendering and grid heights. Does not replace the official AZ-MODS core.
+Experimental independent AZ-MODS community mod, version 0.1.1.
+Adds Enable and 0–100% native waveform height in the four-deck view.
+Keeps the official AZ-MODS core, native colours and grid heights.
 
-See [README-DE.md](README-DE.md) for build, test, installation and publishing.
-Author: MiuxH. License: GPL-3.0-only; see LICENSE and NOTICE.
+Firmware: `ep147-9e9454e357389ece` (EP147 2.00). Core: 1.2.3 or newer.
+Author: MiuxH. GPL-3.0-only; see LICENSE and NOTICE.
+[Builds and test packages](https://github.com/MiuxH/az-waveform-height/actions).
+See [README-DE.md](README-DE.md) for installation and test details.
 
-Firmware tag: `ep147-9e9454e357389ece` (known EP147 2.00). Minimum core: 1.2.3.
-This native hook port has host fixture tests; native runtime testing is pending.
-ARM64 build and the official SDK validator passed on 2026-10-23.
-[Download the experimental test package](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910/artifacts/12525033676) (GitHub sign-in required).
-[Build log](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910). Native emulator and hardware verification remain pending.
-No release is published; the deck catalog remains empty until runtime verification.
+## 0.1.1 correction
+
+0.1.0 failed initialization with code 5: EP147 stores its vtables in an RX
+.rodata segment, which the SDK correctly excludes from its data-only vslot
+service. 0.1.1 uses the supported code-hook service at the verified native
+Component::paintComponentAndChildren dispatcher, filtered to WaveformView.
+The official core's waveform paint and FPS hooks remain in the call chain.
+No SDK range or ownership check is bypassed. High 48-bit emulator userspace
+addresses are now accepted; kernel and unaligned pointers remain rejected.
+
+28 fixture checks passed in plain, ASan/UBSan and TSan. The fixed version's
+ARM64 build is checked by GitHub Actions. Emulator and hardware runtime
+verification remain pending. No public mod-catalog release yet.

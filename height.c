@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* MiuxH: independent community port of the V4 four-deck height model.
- * Native objects are borrowed only during WaveformView::paint on EP147's
+ * Native objects are borrowed only during Component::paintComponentAndChildren
+ * for a validated WaveformView on EP147's
  * message thread. No core internals, stale object dereferences or I/O in hooks. */
 #define _GNU_SOURCE
 #include "azmod-mod.h"
@@ -21,11 +22,9 @@ static az_rect area;
 static const uintptr_t widget_offset[3]={0x90,0x87f8,0x10f60};
 static const uintptr_t widget_vtable[3]={FW_BLUE,FW_RGB,FW_BAND};
 static int sane(uintptr_t p) {
-#ifdef HEIGHT_TEST
-    return p>=0x10000 && !(p&7); /* host allocator uses a different VA range */
-#else
-    return p>=0x10000 && p<UINT64_C(0x10000000000) && !(p&7);
-#endif
+    /* QEMU's arm64 guest uses high 48-bit userspace addresses (ffff....),
+     * unlike the real deck's 39-bit mappings. Never admit kernel pointers. */
+    return p>=0x10000 && p<UINT64_C(0x1000000000000) && !(p&7);
 }
 static uintptr_t word(uintptr_t p,int off) {return *(const uintptr_t *)(p+off);}
 static int integer(uintptr_t p,int off) {return *(const int *)(p+off);}
@@ -120,7 +119,10 @@ static void apply_height(uintptr_t view) {
 }
 
 static void paint(void *self,void *graphics) {
-    if(!in_paint){in_paint=1;apply_height((uintptr_t)self);in_paint=0;}
+    /* This generic entry is also called for children. Restrict all geometry
+     * work to the exact native WaveformView. Keep every original paint call. */
+    uintptr_t p=(uintptr_t)self;
+    if(!in_paint && sane(p) && word(p,0)==FW_VIEW){in_paint=1;apply_height(p);in_paint=0;}
     if(original_paint)original_paint(self,graphics);
 }
 
@@ -171,7 +173,7 @@ static int input(const az_event *e,void *user) {
 static const az_screen_v1 screen={.size=sizeof(az_screen_v1),.on_draw=draw,.on_input=input};
 static int init(const az_core_v1 *core) {
     C=core;
-    if(!core || core->abi!=AZ_MOD_ABI || !AZ_HAS(core,claim_vslot) || !AZ_HAS(core,register_row) ||
+    if(!core || core->abi!=AZ_MOD_ABI || !AZ_HAS(core,claim_hook) || !AZ_HAS(core,register_row) ||
        !AZ_HAS(core,view) || !AZ_HAS(core,row_lookup) || !AZ_HAS(core,row_value) ||
        !AZ_HAS(core,fw_tag) || !AZ_HAS(core,register_screen) || !AZ_HAS(core,cfg_get) ||
        !AZ_HAS(core,cfg_set) || !AZ_HAS(core,request_redraw) || !AZ_HAS(core,draw_header) ||
@@ -185,9 +187,11 @@ static int init(const az_core_v1 *core) {
     az_row_v1 row={.size=sizeof row,.key="height",.label="4-Deck Waveform Height",
         .kind=AZ_ROW_SCREEN,.screen=&screen,.icon=waveform_icon,.help="Native waveform height in 4 DECK; Enable and 0-100%."};
     if(C->register_row(MOD_ID,&row)<0)return 4;
-    /* This slot is separate from the official core's paintOverChildren hook.
-     * SDK validates ownership and EP147 function range; refusal leaves stock. */
-    if(C->claim_vslot(MOD_ID,FW_VIEW+26*8,(void *)paint,(void **)&original_paint))return 5;
+    /* EP147 2.00 vtables live in RX .rodata, outside claim_vslot's data-only
+     * contract. Use the supported code-hook service at the verified native
+     * component paint dispatcher, retaining the core's WaveformView hooks.
+     * Ownership/range/late-hook checks still apply; no raw vtable writes. */
+    if(C->claim_hook(MOD_ID,FW_COMPONENT_PAINT,(void *)paint,(void **)&original_paint))return 5;
     return 0;
 }
 static const char *const tags[]={HEIGHT_FW,NULL};

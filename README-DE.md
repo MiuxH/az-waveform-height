@@ -5,7 +5,7 @@ Sie erweitert die Hoehe der nativen Waveforms in der normalen 4-DECK-Ansicht,
 von Original bis fast aneinander. Die nativen Beatgrids behalten ihre Hoehe.
 Blue, RGB und 3 Band benutzen weiterhin die originalen AZ-Zeichner.
 
-**Status: experimenteller SDK-Port 0.1.0.** Die vorherige Core-Mod V4 wurde in
+**Status: experimenteller SDK-Port 0.1.1.** Die vorherige Core-Mod V4 wurde in
 einen separaten Adapter uebertragen. Dieser Community-Port wurde noch nicht auf
 dem echten AZ oder im Emulator ausgefuehrt. Der ARM64-Build und der offizielle SDK-Paketvalidator sind am 23.10.2026
 erfolgreich durchgelaufen. [Testpaket herunterladen](https://github.com/MiuxH/az-waveform-height/actions/runs/40009228910/artifacts/12525033676)
@@ -23,7 +23,7 @@ Es gibt noch kein veroeffentlichtes Release.
    vorhanden sein. Git unter C:\Program Files\Git wird ebenfalls gefunden.
 3. Das Werkzeug holt den genau festgelegten offiziellen SDK-Commit, baut in
    dessen ARM64-Container, fuehrt den offiziellen Paketvalidator aus und erzeugt
-   **dist/miuxh-wave-height-0.1.0.azmod**. Ein falscher Host-/x86-Build wird vom
+   **dist/miuxh-wave-height-0.1.1.azmod**. Ein falscher Host-/x86-Build wird vom
    Validator abgelehnt. Es werden keine Firmware-Assets benoetigt.
 4. Diese .azmod-Datei ist ein ZIP. Mit 7-Zip in einen Ordner entpacken oder eine
    Kopie in .zip umbenennen. Die vier Dateien azmod.json, miuxh-wave-height.so,
@@ -88,7 +88,7 @@ Nach dem echten Laufzeittest und einem Commit seiner Ergebnisse:
 powershell -ExecutionPolicy Bypass -File .\Publish.ps1 -Release
 ```
 
-Der Tag miuxh-wave-height-0.1.0 startet den offiziellen SDK-Release-Ablauf:
+Der Tag miuxh-wave-height-0.1.1 startet den offiziellen SDK-Release-Ablauf:
 Build, Validator, .azmod-Paket und Icon als GitHub-Release, danach ein Commit mit
 dem echten Paket-URL, SHA256 und Groesse in azmods-repo.json. Der erste Stand wird
 als experimentelles Prerelease markiert. Actions muss den Repository-Inhalt
@@ -113,16 +113,22 @@ vorweggenommen. Quellcode, Lizenz und echte Testresultate gehoeren dazu.
 - Falls ein Core bereits die alte integrierte Hoehenmod aktiv hat, bekommt diese
   Vorrang; diese Community-Mod macht dann keine konkurrierenden Hoehenaenderungen.
   Der vorgesehene Testpartner ist der unveraenderte offizielle Core.
-- Ein belegter WaveformView-paint-Slot wird ueber das SDK abgelehnt, nicht selbst
-  ueberschrieben. Eine generelle Kompatibilitaet mit anderen Layoutmods ist damit
+- Ein bereits belegter nativer Zeichnungsdispatcher wird ueber das SDK
+  abgelehnt, nicht selbst ueberschrieben. Eine generelle Kompatibilitaet mit anderen Layoutmods ist damit
   nicht bestaetigt. Die spaetere CDJ-Player-View-Mod gehoert nicht zu diesem Paket.
 
 ## Technischer Stand / Checks
 
-Native Schnittstelle: WaveformView::paint, virtueller Slot 26. Der offizielle
-Phase-Meter-Core verwendet paintOverChildren, Slot 27. Die Community-Mod behauptet
-keine internen Core-Funktionen, Globals oder Destruktorlisten. Sie verwendet nur
-SDK-Dienste und laesst den Original-Paint genau einmal laufen.
+Native Schnittstelle ab 0.1.1: SDK claim_hook an
+Component::paintComponentAndChildren (Firmware 2.00: 0x25d4d30), gefiltert auf
+die genaue WaveformView-Vtable. Die Funktion ruft den nativen paint-Slot,
+danach die Kinder und paintOverChildren auf. Jeder Originalaufruf bleibt
+bestehen; die offiziellen WaveformView-/FPS-Hooks werden nicht ersetzt.
+0.1.0 scheiterte mit init=5: Die SDK-Datenbereichspruefung lehnt die Vtable in
+EP147s ausfuehrbarem .rodata-Segment ab. Eine Verschiebung der Hauptprogramm-
+Adresse war nicht die Ursache. Die SDK-Pruefung bleibt unveraendert.
+Zusaetzlich akzeptiert die Zeigerpruefung jetzt hohe 48-Bit-Userspace-Adressen
+im Emulator. Kerneladressen und ungerade Pointer bleiben ausgeschlossen.
 
 Native Objekte werden nur waehrend dieses EP147-Message-Thread-Callbacks aus dem
 aktuellen JUCE-Kinderbaum gelesen, mit Vtables, Parent-Verbindungen, nativer
@@ -132,7 +138,7 @@ Zahlen; keine spaeter dereferenzierten Komponentenpointer. Unvollstaendige
 Viererlayouts, unbekannte Decks und zu kleine Raster werden vor Schreibzugriffen
 abgelehnt. Keine Datei-/Netzwerkzugriffe, Threads oder Allokationen im Paint-Hook.
 
-Lokal bestanden: **25 Adapter-/SDK-/Touch-Checks jeweils plain, ASan/UBSan und
+Lokal bestanden: **28 Adapter-/SDK-/Touch-Checks jeweils plain, ASan/UBSan und
 TSan**, einschliesslich gleichzeitiger Einstellungswechsel und nativer Frames.
 Ein separater Host-Link mit versteckten Symbolen exportiert nur
 az_mod_v1_entry. Das generische SDK-Harness verlangt services-only/"any" und
@@ -156,3 +162,11 @@ mit Firmware-Tag und Core-Version dokumentieren.
 GPL-3.0-only, siehe LICENSE und NOTICE. Keine Firmware, Assets, Musik, privaten
 Captures oder Zugangsdaten enthalten. SDK-Commit:
 3dcaf8f7331ea94135d7161f653edfaf906d5ea6.
+
+## Teststand 0.1.1
+
+0.1.0 wurde im Emulator gefunden und freigegeben, scheiterte aber beim Hook
+mit "not inside EP147's data". 0.1.1 behebt diesen Adapterfehler; sein echter
+Emulatorlauf und der Hardware-Test bleiben offen. Die 28 lokalen Fixturechecks
+decken auch hohe Emulatorzeiger und unveraenderte andere Komponenten ab.
+Historische Paket-Links und Pruefsummen oben beziehen sich auf 0.1.0.

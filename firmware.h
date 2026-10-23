@@ -12,5 +12,9 @@
 #define FW_RGB ((uintptr_t)0x2ee1278u)
 #define FW_BAND ((uintptr_t)0x2ee18e8u)
 #define FW_PAINT ((uintptr_t)0x1b3aaa0u)
+/* Component::paintComponentAndChildren(this, Graphics&). Calls paint slot 26,
+ * then child traversal, then paintOverChildren slot 27. Not the core-owned
+ * WaveformView::paint function; native vtables are in the RX .rodata segment. */
+#define FW_COMPONENT_PAINT ((uintptr_t)0x25d4d30u)
 #define FW_HEIGHT ((uintptr_t)0x1cf7b40u)
 #endif

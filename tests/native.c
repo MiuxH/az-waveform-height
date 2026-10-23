@@ -23,6 +23,7 @@ static void fake_bounds(uintptr_t comp,int x,int y,int w,int h);
 #define FW_RELAYOUT ((uintptr_t)fake_layout)
 #define FW_HEIGHT ((uintptr_t)fake_height)
 #define FW_BOUNDS ((uintptr_t)fake_bounds)
+#define FW_COMPONENT_PAINT ((uintptr_t)0x25d4d30u)
 #include "../height.c"
 static int checks;
 #define CHECK(name,expr) do{checks++;if(!(expr)){fprintf(stderr,"FAIL %s\n",name);exit(1);}}while(0)
@@ -41,13 +42,13 @@ static const char *tag(void){return HEIGHT_FW;}
 static const char *bad_tag(void){return "ep147-0000000000000000";}
 static int regscreen(const char *id,const az_screen_v1 *s){(void)id;(void)s;registered++;return 0;}
 static int regrow(const char *id,const az_row_v1 *r){(void)id;(void)r;return 0;}
-static int claim(const char *id,uintptr_t slot,void *fn,void **orig){(void)id;assert(slot==FW_VIEW+26*8);assert(fn);claims++;if(!claim_result)*orig=(void *)fake_paint;return claim_result;}
+static int claim(const char *id,uintptr_t addr,void *fn,void **orig){(void)id;assert(addr==FW_COMPONENT_PAINT);assert(fn);claims++;if(!claim_result)*orig=(void *)fake_paint;return claim_result;}
 static void draw_header(az_draw *d,const char *s){(void)d;(void)s;}
 static void draw_text(az_draw *d,int x,int y,const char *s,int px,uint32_t rgb){(void)d;(void)x;(void)y;(void)s;(void)px;(void)rgb;}
 static void rect(az_draw *d,int x,int y,int w,int h,uint32_t rgb){(void)d;(void)x;(void)y;(void)w;(void)h;(void)rgb;}
 static void checkbox(az_draw *d,int x,int y,int s,int on,int hi){(void)d;(void)x;(void)y;(void)s;(void)on;(void)hi;}
 static uint32_t color(int role){(void)role;return 0xffffff;}
-static az_core_v1 core={.abi=AZ_MOD_ABI,.size=sizeof(az_core_v1),.claim_vslot=claim,.register_row=regrow,.register_screen=regscreen,.view=service_view,.fw_tag=tag,.row_lookup=lookup,.row_value=value,.cfg_get=get,.cfg_set=set,.request_redraw=redraw,.draw_header=draw_header,.draw_text=draw_text,.fill_rect=rect,.draw_checkbox=checkbox,.color=color};
+static az_core_v1 core={.abi=AZ_MOD_ABI,.size=sizeof(az_core_v1),.claim_hook=claim,.register_row=regrow,.register_screen=regscreen,.view=service_view,.fw_tag=tag,.row_lookup=lookup,.row_value=value,.cfg_get=get,.cfg_set=set,.request_redraw=redraw,.draw_header=draw_header,.draw_text=draw_text,.fill_rect=rect,.draw_checkbox=checkbox,.color=color};
 static void fixture(void){
     memset(&outer,0,sizeof outer);memset(inner,0,sizeof inner);in_paint=0;C=&core;enabled=1;level=10;conflict=-1;
     v=calloc(1,0x500);putp((uintptr_t)v,0,FW_VIEW);putp((uintptr_t)v,0x40,(uintptr_t)kids);set_integer((uintptr_t)v,0x50,4);set_integer((uintptr_t)v,0x3a8,2);set_integer((uintptr_t)v,0x194,92);
@@ -70,7 +71,10 @@ int main(void){
     az_core_v1 missing={0};CHECK("missing API refused",init(&missing)==1);
     core.fw_tag=bad_tag;CHECK("unknown firmware refused before claiming",init(&core)==2 && claims==0);core.fw_tag=tag;
     claim_result=-1;CHECK("occupied hook fails explicitly",init(&core)==5);claim_result=0;
-    CHECK("valid init claims exactly the paint slot",init(&core)==0 && claims==2 && registered==2);
+    CHECK("valid init claims native component dispatcher without a vslot service",init(&core)==0 && claims==2 && registered==2);
+    CHECK("high QEMU userspace addresses accepted",sane(UINT64_C(0xffff914e7000)));
+    CHECK("kernel pointers and unaligned addresses refused",!sane(UINT64_C(0xffff000000000000)) && !sane(UINT64_C(0xffff914e7001)));
+    fixture();uintptr_t other[2]={0};paint(other,NULL);CHECK("unrelated components paint once without layout writes",paints==1 && !layouts && !bounds);release();
     fixture();paint(v,NULL);CHECK("native paint always runs",paints==1);
     CHECK("four fields grow inside original total span",integer((uintptr_t)v,0x194)==117 && layouts==1);
     CHECK("native grids stay fifteen pixels",integer((uintptr_t)owners[0],0x58)==15);
