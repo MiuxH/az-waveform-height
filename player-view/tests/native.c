@@ -56,6 +56,8 @@ static int row_values[8],nrows,original_calls,native_calls,saves,relayouts,repai
 static int view_kind=AZ_VIEW_DECK;
 static float last_matrix[6];
 static int cleared_full,fx_draws;
+static unsigned loaded_mask=15u,drawn_boxes,drawn_previews;
+static int header_clips,tab_labels,player_labels;
 static int time_pending,time_end,time_base,fraction_checks;
 static void ptr(void *p,int off,uintptr_t v){memcpy((char *)p+off,&v,8);}
 static void num(void *p,int off,int v){memcpy((char *)p+off,&v,4);}
@@ -98,10 +100,16 @@ static void orig(void *s,void *g,int a){(void)s;(void)g;(void)a;original_calls++
 static void *at_orig(void *self,const int *point){(void)point;return self;}
 static int claim(const char *id,uintptr_t a,void *fn,void **out){(void)id;(void)fn;CHECK(a==FW_PAINT_ENTIRE || a==FW_COMPONENT_AT);*out=a==FW_PAINT_ENTIRE?(void *)orig:(void *)at_orig;return 0;}
 static int touch_filter(const char *id,az_touch_fn fn,void *user){(void)id;(void)user;CHECK(fn!=NULL);return 0;}
+static int width(const char *,int);
 static void txt(az_draw *d,int x,int y,const char *s,int px,uint32_t c){(void)d;(void)c;CHECK(px>=8&&px<=96);texts++;
- if(!strcmp(s,"03:50")){time_pending=1;time_end=x+(int)strlen(s)*px/2;time_base=y+px*3/2;}
+ if(!strcmp(s,"BEAT")||!strcmp(s,"LOOP")||!strcmp(s,"KEY")||!strcmp(s,"SHIFT")||!strcmp(s,"JUMP"))tab_labels++;
+ if(!strcmp(s,"PLAYER"))player_labels++;
+ if(!strcmp(s,"03:50")){time_pending=1;time_end=x+width(s,px);time_base=y+px*3/2;}
  else if(time_pending && !strcmp(s,".000")){CHECK(x==time_end+2);CHECK(y+px*3/2==time_base);time_pending=0;fraction_checks++;}}
-static int width(const char *s,int px){return (int)strlen(s)*px/2;}
+static int width(const char *s,int px){
+ int units=0;for(;*s;s++)units+=strchr(".:, ",*s)?25:strchr("Iil",*s)?28:*s=='W'?95:(*s>='0'&&*s<='9')?58:67;
+ return units*px/100;
+}
 static void fill_sdk(az_draw *d,int x,int y,int w,int h,uint32_t c){(void)d;(void)x;(void)y;(void)w;(void)h;(void)c;}
 static void line_sdk(az_draw *d,int x,int y,int x1,int y1,int w,uint32_t c){(void)d;(void)x;(void)y;(void)x1;(void)y1;(void)w;(void)c;}
 static int image_sdk(az_draw *d,int x,int y,const unsigned char *p,int w,int h){
@@ -114,17 +122,18 @@ static int image_sdk(az_draw *d,int x,int y,const unsigned char *p,int w,int h){
  }
  return 0;
 }
-static int info(int d,az_deck_info *o){o->loaded=1;o->pos_s=10+d;o->len_s=240;o->bpm=150+d;snprintf(o->title,128,"Track %d",d+1);return 0;}
+static int info(int d,az_deck_info *o){o->loaded=!!(loaded_mask&(1u<<d));o->pos_s=10+d;o->len_s=240;o->bpm=150+d;snprintf(o->title,128,"Track %d",d+1);return 0;}
 static int grid(int d,double *beat,double *bar){*beat=d*.1;*bar=-1;return 0;}
-static void mock_children(void *s,void *g){(void)g;CHECK(sane((uintptr_t)s));native_calls++;if(s==fx)fx_draws++;}
+static void mock_children(void *s,void *g){(void)g;CHECK(sane((uintptr_t)s));native_calls++;if(s==fx)fx_draws++;
+ for(int k=0;k<4;k++){if(s==(void *)((uintptr_t)owners[k]+0x198c8))drawn_boxes|=1u<<k;if(s==families[k])drawn_previews|=1u<<k;}}
 static void mock_relayout(uintptr_t s){CHECK(s==(uintptr_t)root);relayouts++;}
-static void mock_repaint(void *s,const int *r){CHECK(s==(void *)root&&r[1]==96);repaints++;}
+static void mock_repaint(void *s,const int *r){CHECK(s==(void *)root&&r[1]==70);repaints++;}
 static void mock_save(void *g){(void)g;saves++;}
 static void mock_restore(void *g){(void)g;saves--;CHECK(saves>=0);}
-static int mock_clip(void *g,const int *r){(void)g;CHECK(valid_rect((rect){r[0],r[1],r[2],r[3]},1280,800));clips++;return 1;}
+static int mock_clip(void *g,const int *r){(void)g;CHECK(valid_rect((rect){r[0],r[1],r[2],r[3]},1280,800));if(r[1]==0&&r[3]==70)header_clips++;clips++;return 1;}
 static void mock_transform(void *g,const float *m){(void)g;memcpy(last_matrix,m,sizeof last_matrix);CHECK(isfinite(m[0])&&isfinite(m[4]));}
 static void mock_colour(void *g,const uint32_t *c){(void)g;CHECK((*c&0xff000000u)==0xff000000u);}
-static void mock_fill(void *g,float x,float y,float w,float h){(void)g;CHECK(x==0&&y==96&&w==1280&&h==704);cleared_full++;}
+static void mock_fill(void *g,float x,float y,float w,float h){(void)g;CHECK(x==0&&y==70&&w==1280&&h==730);cleared_full++;}
 static unsigned stress_done,stress_bad;
 static void *publisher(void *unused) {
  (void)unused;
@@ -158,7 +167,7 @@ int main(void){
   struct native_parts found;census((uintptr_t)root,&found);CHECK(found.families==15u&&!found.truncated);
   for(int dd=0;dd<4;dd++) {CHECK(found.preview[dd]==(uintptr_t)families[dd]);}
   CHECK(!saves);tick();CHECK(shown);
-  surface_paint((az_draw *)1,(az_rect){0,96,1280,704},NULL);CHECK(texts>0);CHECK(fraction_checks==choice+1);
+  surface_paint((az_draw *)1,(az_rect){0,96,1280,704},NULL);CHECK(texts>0);CHECK(fraction_checks==choice+1);CHECK(tab_labels==6*((1<<(choice+1))-1));CHECK(player_labels==(1<<(choice+1))-1);
  }
  CHECK(relayouts==1&&integer((uintptr_t)root,0x3a8)==2);
  unsigned char f[32]={0};f[9]=1;frames(AZ_BUS_ERP_IN,f,32,NULL);CHECK(LOAD(&focus_deck)==2&&LOAD(&left_deck)==2);
@@ -170,6 +179,7 @@ int main(void){
  graph();row_values[count_row]=2;paint(root,(void *)1,1);
  CHECK(component_at(root,(int[]){100,400})==NULL);
  CHECK(component_at(root,(int[]){100,30})==root);
+ CHECK(component_at(root,(int[]){100,80})==NULL);
  CHECK(component_at(root,(int[]){1400,400})==root);
  view_kind=AZ_VIEW_SOURCE;CHECK(component_at(root,(int[]){100,400})==root);view_kind=AZ_VIEW_DECK;
  struct layout hit=geometry(1280,4,0);
@@ -191,6 +201,15 @@ int main(void){
   struct layout l=geometry(w,n,i);CHECK(valid_rect(l.wave,w,800)&&valid_rect(l.preview,w,800));
  }
  CHECK(original_calls==7);
+ /* An unloaded player has no own, preview or comparison waveform. A single
+  * loaded deck in four-player mode is painted only three slices + preview. */
+ loaded_mask=1;STORE(&focus_deck,0);STORE(&left_deck,0);STORE(&right_deck,1);
+ row_values[count_row]=2;native_calls=0;drawn_boxes=drawn_previews=0;
+ paint(root,(void *)1,1);CHECK(native_calls==4);CHECK(drawn_boxes==1&&drawn_previews==1);
+ struct presented only;snapshot(&only);CHECK(only.waves==1&&only.previews==1);
+ loaded_mask=0;native_calls=0;paint(root,(void *)1,1);CHECK(native_calls==0);
+ loaded_mask=15;
+
  /* Right-hand stock footer fragments are cleared even when the FX drawer
   * occupies only the top of that strip; the real container is repainted. */
  component(fx,FW_FX_CONTAINER,(uintptr_t)root,1044,96,236,400);

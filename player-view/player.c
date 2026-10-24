@@ -204,7 +204,7 @@ static void *component_at(void *self,const int *point) {
     if(point && sane(p) && word(p,0)==FW_VIEW && enabled() && C->view()==AZ_VIEW_DECK) {
         struct presented state;
         if(snapshot(&state) && state.valid && now_ns()-state.stamp<250000000u &&
-           point[0]>=0 && point[0]<1280 && point[1]>=96 && point[1]<800 &&
+           point[0]>=0 && point[0]<1280 && point[1]>=70 && point[1]<800 &&
            !(point[0]>=state.width && point[1]>=state.fx_y && point[1]<state.fx_y+state.fx_h))return NULL;
     }
     return original_component_at(self,point);
@@ -245,7 +245,8 @@ static void paint(void *self,void *g,int ignore_alpha) {
     }
     /* Component painting can leave a reduced graphics state behind. The
      * composition must use the caller's original clip/transform. */
-    native_save(g);original(self,g,ignore_alpha);native_restore(g);
+    native_save(g);
+    original(self,g,ignore_alpha);native_restore(g);
     /* The original can run native layout callbacks. Never reuse captures
      * taken before it; obtain the current tree again. */
     census(view,&parts);
@@ -261,17 +262,25 @@ static void paint(void *self,void *g,int ignore_alpha) {
     state.focus=LOAD(&focus_deck);state.left=LOAD(&left_deck);state.right=LOAD(&right_deck);
     if(state.focus<0 || state.focus>3 || state.left<0 || state.left>3 || state.right<0 || state.right>3)goto done;
     native_save(g);
-    native_fill(g,(rect){0,96,1280,704},0x050505);
+    native_fill(g,(rect){0,70,1280,730},0x050505);
+    unsigned loaded=0;
+    for(int d=0;d<4;d++) {
+        az_deck_info info={.size=sizeof info};
+        if(!C->deck_info(d,&info) && info.loaded==1)loaded|=1u<<d;
+    }
     for(int i=0;i<state.count;i++) {
         int d=player_for(state.count,i,state.focus,state.left,state.right);
         struct layout l=geometry(state.width,state.count,i);
+        if(!(loaded&(1u<<d)))continue;
         if(native_wave(g,parts.box[d],parts.owner[d],l.wave,0))state.waves|=1u<<d;
         int ref=d==state.left?state.right:state.left;
         if(ref==d)ref=(d+1)%4;
         unsigned phase=LOAD(&phase_mask);
-        if(!(phase&(1u<<d)) && C->row_value(compare_row)==0)
-            native_wave(g,parts.box[ref],parts.owner[ref],l.compare,1);
-        else native_phase(g,l.compare,d,ref);
+        if(loaded&(1u<<ref)) {
+            if(!(phase&(1u<<d)) && C->row_value(compare_row)==0)
+                native_wave(g,parts.box[ref],parts.owner[ref],l.compare,1);
+            else native_phase(g,l.compare,d,ref);
+        }
         if(parts.preview[d]) {
             rect b=bounds(parts.preview[d]);
             if(b.w>=100 && b.w<=1280 && b.h>=12 && b.h<=256 &&
@@ -289,7 +298,7 @@ static void paint(void *self,void *g,int ignore_alpha) {
     /* Reuse native invalidations and promote the following native frame to
      * the complete composed area. No private 20/30-FPS waveform timer. */
     if(state.stamp-repaint_at>=15000000u) {
-        int r[4]={0,96,1280,704};
+        int r[4]={0,70,1280,730};
         ((void (*)(void *,const int *))FW_REPAINT)(self,r);repaint_at=state.stamp;
     }
 done:
@@ -345,6 +354,10 @@ static int touch(const az_touch *t,void *user) {
     struct presented p;
     if(t->slot!=0 || !enabled() || C->view()!=AZ_VIEW_DECK ||
        !snapshot(&p) || !p.valid || now_ns()-p.stamp>250000000u)return AZ_TOUCH_PASS;
+    if(t->x>=0 && t->x<1280 && t->y>=70 && t->y<96 &&
+       !(t->x>=p.width && t->y>=p.fx_y && t->y<p.fx_y+p.fx_h)) {
+        was_down=t->down;return AZ_TOUCH_TAKE;
+    }
     for(int i=0;i<p.count;i++) {
         struct layout l=geometry(p.width,p.count,i);
         if(inside(l.panel,t->x,t->y)) {

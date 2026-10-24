@@ -74,10 +74,62 @@ static int community_number(const azmod_fb *f,int x,int y,int w,int h,const char
     if(nlabels>before)labels[nlabels-1].r.w=w;
     return advance;
 }
+/* Fit the whole number together. Fraction size follows the fitted integer,
+ * and space is reserved before any text is queued. No last-digit trimming. */
+static void community_pair(const azmod_fb *f,struct pv_rect r,const char *whole,const char *fraction,int px,int ratio,uint32_t color) {
+    if(px>64)px=64;
+    int fp=8,advance=0,fw=0,gap=fraction[0]?2:0;
+    for(;px>=8;px--) {
+        fp=px*ratio/100;if(fp<8)fp=8;
+        advance=render_core->text_width(whole,px);fw=fraction[0]?render_core->text_width(fraction,fp):0;
+        if(px*3/2<=r.h && advance+gap+fw<=r.w)break;
+    }
+    if(px<8)return;
+    community_number(f,r.x,r.y,advance,r.h,whole,px,color);
+    if(fraction[0])community_number(f,r.x+advance+gap,r.y,fw,r.h,fraction,fp,color);
+}
+static void community_compact_status(const azmod_fb *,struct pv_layout,const struct pv_deck *,int,unsigned);
 static void draw_text(const azmod_fb *f,int x,int y,const char *s,int scale,uint32_t col) {
     label_add(f,x,y,f->h-y,s,scale*8,col);
 }
 #include "chrome.c"
+
+/* Narrow panes reflow the instrument columns. The PLAYER label, full clock,
+ * tempo and BPM have explicit space instead of sharing shrunken V22 columns. */
+static void community_compact_status(const azmod_fb *f,struct pv_layout l,const struct pv_deck *d,int deck,unsigned elapsed_mask) {
+    int x=l.panel.x+4,y=l.player.y,h=l.player.h,w=l.panel.w-8,gap=4;
+    int badge=48,track=34,rest=w-badge-track-gap*4;
+    int tw=rest*50/100,pw=rest*23/100,bw=rest-tw-pw;
+    struct pv_rect player={x,y,badge,h},tr={x+badge+gap,y,track,h};
+    struct pv_rect time={tr.x+track+gap,y,tw,h},tempo={time.x+tw+gap,y,pw,h},bpm={tempo.x+pw+gap,y,bw,h};
+    pv_frame(f,player,d->selected?PV_WHITE:PV_MUTED);pv_frame(f,bpm,PV_WHITE);
+    int caption=16,small=9;
+    pv_fit(f,(struct pv_rect){player.x+2,y,player.w-4,caption},"PLAYER",small,PV_WHITE,1);
+    pv_fit(f,(struct pv_rect){tr.x,y,tr.w,caption},"TRACK",small,PV_MUTED,1);
+    int elapsed=(elapsed_mask>>deck)&1u;if(!(d->duration>0))elapsed=1;
+    pv_fit(f,(struct pv_rect){time.x,y,time.w,caption},elapsed?"TIME":"REMAIN",small,PV_MUTED,0);
+    pv_fit(f,(struct pv_rect){tempo.x,y,tempo.w,caption},"TEMPO",small,PV_MUTED,0);
+    pv_fit(f,(struct pv_rect){bpm.x+3,y,bpm.w-6,caption},"BPM",small,PV_WHITE,0);
+    struct pv_rect number={player.x+4,y+caption,player.w-8,h-caption-3};
+    char a[64],b[16];snprintf(a,sizeof a,"%d",deck+1);
+    community_pair(f,number,a,"",h,43,PV_WHITE);
+    number=(struct pv_rect){tr.x,y+caption,tr.w,h-caption-3};
+    if(d->track_number>=0)snprintf(a,sizeof a,"%d",d->track_number);else snprintf(a,sizeof a,"--");
+    community_pair(f,number,a,"",h/2,43,PV_WHITE);
+    double seconds=elapsed?d->elapsed:d->duration-d->elapsed;
+    if(d->loaded!=1 || !isfinite(seconds) || seconds<0 || seconds>=86400 || d->elapsed<0) {
+        snprintf(a,sizeof a,"--:--");snprintf(b,sizeof b,".---");
+    } else {
+        long ms=(long)(seconds*1000);snprintf(a,sizeof a,"%02ld:%02ld",ms/60000,(ms/1000)%60);
+        snprintf(b,sizeof b,".%03ld",ms%1000);
+    }
+    number=(struct pv_rect){time.x,y+caption,time.w,h-caption-3};community_pair(f,number,a,b,h,43,PV_WHITE);
+    if(isfinite(d->tempo))snprintf(a,sizeof a,"%+.2f",d->tempo);else snprintf(a,sizeof a,"--.--");
+    number=(struct pv_rect){tempo.x,y+caption,tempo.w,h-caption-3};community_pair(f,number,a,"%",h*2/3,43,PV_WHITE);
+    if(d->loaded==1 && d->bpm>=20 && d->bpm<=400)snprintf(a,sizeof a,"%.1f",d->bpm);else snprintf(a,sizeof a,"---.-");
+    char *dot=strchr(a,'.');snprintf(b,sizeof b,"%s",dot?dot:".-");if(dot)*dot=0;
+    number=(struct pv_rect){bpm.x+3,y+caption,bpm.w-6,h-caption-3};community_pair(f,number,a,b,h,52,PV_WHITE);
+}
 
 int community_render_init(const az_core_v1 *core) {
     render_core=core;render_pixels=calloc(1280*800,4);
@@ -108,6 +160,7 @@ void community_render(az_draw *ctx,int width,int count,int focus,int left,int ri
         snprintf(out->title,sizeof out->title,"%s",in->title);
         snprintf(out->artist,sizeof out->artist,"%s",in->artist);
         snprintf(out->key_name,sizeof out->key_name,"%s",in->key);
+        if(in->loaded!=1){out->elapsed=out->duration=-1;out->bpm=0;out->key_name[0]=0;}
         /* Sentinel tests only presence in chrome. The community native guards
          * above the old raster readers prohibit dereferencing it. */
         out->wave.data=(const unsigned char *)1;

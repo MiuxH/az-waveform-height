@@ -857,11 +857,16 @@ static void pv_readout_time(const azmod_fb *fb,struct pv_layout l,const struct p
     else { ms=(long)(seconds*1000); snprintf(value,sizeof value,"%02ld:%02ld",ms/60000,(ms/1000)%60); }
     struct pv_rect time={l.time.x,l.time.y+caption,l.time.w*78/100,l.time.h-caption-2};
     int px=l.time.h*104/100;
+    if(community_native) {
+        char fraction[12];if(ms<0)snprintf(fraction,sizeof fraction,".---");else snprintf(fraction,sizeof fraction,".%03ld",ms%1000);
+        time.w=l.time.w;community_pair(fb,time,value,fraction,px,43,PV_WHITE);return;
+    }
     int advance=pv_number(fb,time,value,px,PV_WHITE);
     char fraction[12]; if (ms<0) snprintf(fraction,sizeof fraction,".---"); else snprintf(fraction,sizeof fraction,".%03ld",ms%1000);
     pv_number(fb,(struct pv_rect){time.x+advance+2,time.y,l.time.w-advance-2,time.h},fraction,px*43/100,PV_WHITE);
 }
 static void pv_readouts(const azmod_fb *fb, struct pv_layout l, const struct pv_deck *d, int deck, unsigned elapsed_mask) {
+    if(community_native && l.panel.w<900){community_compact_status(fb,l,d,deck,elapsed_mask);return;}
     int small=l.player.h*15/100; if (small<9) small=9;
     int caption=l.player.h*22/100;
     char value[64];
@@ -914,8 +919,11 @@ static void pv_readouts(const azmod_fb *fb, struct pv_layout l, const struct pv_
     if (dot) { snprintf(decimal,sizeof decimal,"%s",dot); *dot=0; }
     struct pv_rect bpm={l.bpm.x+4,l.bpm.y+caption,l.bpm.w*73/100,l.bpm.h-caption-3};
     int bpm_px=l.bpm.h*95/100;
-    advance=pv_number(fb,bpm,value,bpm_px,bpm_color);
-    pv_number(fb,(struct pv_rect){bpm.x+advance,bpm.y,l.bpm.w-advance-8,bpm.h},decimal,bpm_px*52/100,bpm_color);
+    if(community_native) {bpm.w=l.bpm.w-8;community_pair(fb,bpm,value,decimal,bpm_px,52,bpm_color);}
+    else {
+        advance=pv_number(fb,bpm,value,bpm_px,bpm_color);
+        pv_number(fb,(struct pv_rect){bpm.x+advance,bpm.y,l.bpm.w-advance-8,bpm.h},decimal,bpm_px*52/100,bpm_color);
+    }
     struct pv_rect mt={l.key.x,l.cues.y,l.key.w,l.cues.h};
     pv_frame(fb,mt,d->master_tempo>0?PV_ORANGE:PV_LINE);
     pv_fit(fb,mt,"MT",small,d->master_tempo>0?PV_ORANGE:PV_MUTED,1);
@@ -992,9 +1000,9 @@ void azmod_player_draw(const azmod_fb *fb, const struct pv_deck decks[4], int co
             pv_frame(fb, button, selected ? PV_BLUE : PV_LINE);
             struct pv_rect text = {button.x + 3, button.y, button.w - 6, button.h / 2};
             int px=l.title.h*22/100;
-            pv_center(fb, text, tab_top[tab], px, enabled ? 0xffffff : 0x777777);
+            pv_fit(fb, text, tab_top[tab], px, enabled ? 0xffffff : 0x777777,1);
             text.y += text.h;
-            pv_center(fb, text, tab_bottom[tab], px, enabled ? 0xffffff : 0x777777);
+            pv_fit(fb, text, tab_bottom[tab], px, enabled ? 0xffffff : 0x777777,1);
         }
         if (d->loaded != 0) {
             if (phase_mask & (1u << deck)) pv_phase_draw(fb, l.compare, d, &decks[ref]);

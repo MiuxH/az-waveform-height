@@ -1,9 +1,37 @@
-# CDJ Player View – Community-Test 0.1.3
+# CDJ Player View – Community-Test 0.1.4
 
 Erster eigenstaendiger Community-Port unserer bisherigen Player View V22.
 Nur Emulator-Test, noch nicht fuer Auftritte oder den echten AZ freigegeben.
 Firmware 2.00, AZ-MODS 1.2.5, exakter Tag ep147-9e9454e357389ece.
 ID miuxh-player-view; der offizielle Core wird nicht ersetzt.
+
+## 0.1.4: Schmale Player und ungeladene Decks
+
+Die neuen Emulatorbilder bestaetigen die native Gesamtwelle samt Cues und die
+Zweier-/Viereransicht. Sie zeigen abgeschnittene Tabs/PLAYER-Labels, eine
+AZ-Restzeile vor dem Titel und Vergleichswellen auf ungeladenen Decks.
+
+- Schmale Player erhalten einen eigenen Statusaufbau mit festen Spalten fuer
+  PLAYER, TRACK, Zeit, TEMPO und BPM. Keine verkleinerte Kopie der breiten Anzeige.
+- Uhr und BPM werden mitsamt Nachkommastellen als Gruppe eingepasst. Die kleinere
+  Schrift richtet sich nach der tatsaechlich passenden Hauptschrift.
+- BEAT LOOP / KEY SHIFT / BEAT JUMP werden mit nativen Fontmetriken eingepasst.
+  Die grauen Tabs sind weiterhin noch keine angebundenen Audiofunktionen.
+- Die native Flaeche wird ab y=70 statt y=96 bereinigt. Die offiziellen
+  Performance-Overlays besitzen ein eigenes Fenster und bleiben darueber.
+- Nur sicher geladene Decks werden zusaetzlich als Welle/Preview gezeichnet;
+  Vergleich nur bei geladenem eigenem und geladenem Referenzdeck. Bei fehlenden
+  Daten wird weder ein Playhead noch eine Vergleichswelle erfunden.
+- Der offizielle native Paint-Pfad bleibt erhalten. Die Optimierung spart
+  zusaetzliche Zeichnungen ungeladener Decks und nutzlose Vergleichskopien.
+  Im Fixture mit einem geladenen Track sinken die zusaetzlichen nativen
+  Wave-/Preview-Aufrufe der Viereransicht von 20 auf 4 (jeweils ohne Beat FX).
+  Das ist eine Aufrufzaehlung, keine gemessene Hardware-FPS-Steigerung.
+- 1/2 behalten ihre gemeinsamen Hoehen; zwei Player stehen nebeneinander.
+
+Visueller Emulator-Test und FPS-Messung dieses neuen Builds stehen noch aus.
+Native Tempo-/Master-/Track-Metadaten fehlen im aktuellen SDK-Port weiterhin;
+sie werden nicht durch erfundene Werte ersetzt. Beat FX bleibt gemeinsam/nativ.
 
 ## 0.1.3: Darstellung nach erstem Emulator-Screenshot korrigiert
 
