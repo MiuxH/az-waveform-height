@@ -1,13 +1,13 @@
 {
-  "version": "0.1.1",
+  "version": "0.1.2",
   "scope": "first community port; native waveform composition prototype",
   "plain": "passed",
   "asan_ubsan": "passed; leak inspection disabled",
   "tsan": "passed",
-  "fixture_assertions": "722 plain / 722 ASan-UBSan / 725 TSan; time-dependent repaint assertions",
-  "arm64_build": "Reuses unchanged validated 0.1.0 ARM64 library",
-  "official_validator": "passed for repackaged 0.1.1 manifest",
-  "emulator_runtime": "pending user test of corrected version gate",
+  "fixture_assertions": "727 plain / 727 ASan-UBSan / 729 TSan; time-dependent repaint checks",
+  "arm64_build": "pending new library",
+  "official_validator": "pending new package",
+  "emulator_runtime": "pending corrected hook test",
   "hardware_runtime": "not released for hardware testing",
   "visual_reference_comparison": "pending emulator screenshots",
   "measured_fps": null,
@@ -19,14 +19,16 @@
   ],
   "workflow_run": "https://github.com/MiuxH/az-waveform-height/actions/runs/40082312838",
   "source_commit": "878af7ccd90831c16221fcd096f22dc31ac292c4",
-  "package_sha256": "df2ad82c17f2cf39d6b0e5282e33459de09206ed0b828ccfc42611ae7fab531e",
-  "package_size": 113878,
+  "package_sha256": null,
+  "package_size": null,
   "hooks": [
     "paintEntireComponent 0x25d4a80",
-    "getComponentAt(Point<int> const&) 0x25f03d0"
+    "getComponentAt prologue 0x25f03d8, entry 0x25f03d0"
   ],
   "installer_tests": "7 passed, including exact 0.1.0 replacement, unknown-file refusal and failed-rename rollback",
   "runtime_0_1_0": "Refused before init: Needs AZ-MODS 1.2.5 or newer",
   "minimum_core": "1.2.3; actual services checked with AZ_HAS",
-  "library_sha256": "110f6974c6c8597b18dd6533de701e0d953b7eb19d8f25dc4086c1717ebcc7ab"
+  "library_sha256": "110f6974c6c8597b18dd6533de701e0d953b7eb19d8f25dc4086c1717ebcc7ab",
+  "runtime_0_1_1": "init 11: paint hook succeeded, getComponentAt entry rejected by SDK installer",
+  "hook_fix": "Verified +8 stack-prologue hook after native TBZ visibility check; guarded by 32-byte entry FNV64 fingerprint"
 }

@@ -17,7 +17,12 @@
 /* paintEntireComponent, distinct from the dispatcher claimed by height mod. */
 #define FW_PAINT_ENTIRE ((uintptr_t)0x25d4a80)
 #define FW_PAINT_CHILDREN ((uintptr_t)0x25d4d30)
-#define FW_COMPONENT_AT ((uintptr_t)0x25f03d0)
+/* Entry starts with a visibility test and TBZ. Keep that test native, and hook
+ * at its first stack-frame instruction. x0/x1 and SP are unchanged there;
+ * the scratch w2 from the visibility test is overwritten before it is used. */
+#define FW_COMPONENT_ENTRY ((uintptr_t)0x25f03d0)
+#define FW_COMPONENT_AT ((uintptr_t)0x25f03d8)
+#define FW_COMPONENT_FNV UINT64_C(0x0769253d493e9871)
 #define FW_RELAYOUT ((uintptr_t)0x1b3fa60)
 #define FW_REPAINT ((uintptr_t)0x25f31e0)
 #define FW_G_SAVE ((uintptr_t)0x251c390)

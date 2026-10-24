@@ -1,9 +1,21 @@
-# CDJ Player View – Community-Test 0.1.1
+# CDJ Player View – Community-Test 0.1.2
 
 Erster eigenstaendiger Community-Port unserer bisherigen Player View V22.
 Nur Emulator-Test, noch nicht fuer Auftritte oder den echten AZ freigegeben.
 Firmware 2.00, AZ-MODS 1.2.5, exakter Tag ep147-9e9454e357389ece.
 ID miuxh-player-view; der offizielle Core wird nicht ersetzt.
+
+## 0.1.2: Hook-Einstieg korrigiert
+
+Die Diagnose des 0.1.1-Laufs bestaetigt den Paint-Hook, aber der zweite Hook
+am getComponentAt-Einstieg wird vom SDK-Installer abgelehnt. Der erste
+Vier-Instruktionen-Bereich enthaelt einen TBZ-Sprung. Der Hook sitzt jetzt
+acht Bytes spaeter an der ersten Stack-Frame-Instruktion; die native
+Sichtbarkeitspruefung bleibt davor erhalten. Argumente und Stack sind dort
+unveraendert, der zuvor verwendete Scratchwert ist vor jeder weiteren Nutzung
+ueberschrieben. Ein 32-Byte-Fingerprint wird vor allen Hook-Claims geprueft.
+Die SDK-Relokations-, Besitz- und Laufzeit-Patchpruefungen bleiben aktiv.
+Neuer ARM64-Build; vor Installation Emulator vollstaendig neu starten.
 
 ## 0.1.1: Versionssperre korrigiert
 
@@ -106,7 +118,7 @@ Emulatorlauf, Screenshots, Bildraten und Audio auf dieser neuen Version: offen.
 ## Technik und Lizenz
 
 Zwei SDK-Code-Hooks: Component::paintEntireComponent (0x25d4a80) und
-Component::getComponentAt(Point<int> const&) (0x25f03d0). Paint ist
+Component::getComponentAt(Point<int> const&) (Hookstelle 0x25f03d8 hinter dem Einstieg 0x25f03d0). Paint ist
 gefiltert auf die genaue WaveformView. Kein Hook auf die bereits vom Core
 belegte WaveformView-Paint-Funktion oder den Height-Mod-Dispatcher.
 Native Zeiger werden nur im aktuellen GUI-Paint aus dem Live-Kindbaum geborgt;

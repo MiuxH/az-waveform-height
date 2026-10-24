@@ -32,7 +32,11 @@ static void mock_transform(void *,const float *);
 static void mock_colour(void *,const uint32_t *);
 static void mock_fill(void *,float,float,float,float);
 #define FW_PAINT_ENTIRE ((uintptr_t)0x123456)
-#define FW_COMPONENT_AT ((uintptr_t)0x123488)
+static _Alignas(8) unsigned char at_bytes[32];
+static uint64_t fixture_fingerprint;
+#define FW_COMPONENT_ENTRY ((uintptr_t)at_bytes)
+#define FW_COMPONENT_AT ((uintptr_t)(at_bytes+8))
+#define FW_COMPONENT_FNV fixture_fingerprint
 #define FW_PAINT_CHILDREN ((uintptr_t)mock_children)
 #define FW_RELAYOUT ((uintptr_t)mock_relayout)
 #define FW_REPAINT ((uintptr_t)mock_repaint)
@@ -135,6 +139,9 @@ int main(void){
  az_core_v1 core={.abi=AZ_MOD_ABI,.size=sizeof core,.fw_tag=tag,.register_screen=reg_screen,.register_row=reg,.row_value=value,.row_set=set,.row_lookup=lookup,.view=view,
   .surface_create=create,.surface_place=place,.surface_show=show,.surface_redraw=redraw,.frame_filter=filter,.claim_hook=claim,
   .touch_filter=touch_filter,.draw_text=txt,.text_width=width,.fill_rect=fill_sdk,.draw_line=line_sdk,.draw_image=image_sdk,.deck_info=info,.deck_grid=grid};
+ fixture_fingerprint=code_fingerprint(at_bytes);
+ at_bytes[0]=1;CHECK(init(&core)==14);CHECK(nrows==0);at_bytes[0]=0;
+ CHECK(hit_profile_ok());CHECK(FW_COMPONENT_AT==FW_COMPONENT_ENTRY+8);
  CHECK(init(&core)==0);graph();row_values[enable_row]=1;
  for(int choice=0;choice<3;choice++){
   row_values[count_row]=choice;native_calls=0;paint(root,(void *)1,1);

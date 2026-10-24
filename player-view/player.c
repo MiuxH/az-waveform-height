@@ -61,6 +61,15 @@ static int snapshot(struct presented *v) {
     memset(v,0,sizeof *v);return 0;
 }
 static int sane(uintptr_t p){return p>=0x10000 && p<UINT64_C(0x1000000000000) && !(p&7);}
+static uint64_t code_fingerprint(const unsigned char *bytes) {
+    uint64_t h=UINT64_C(0xcbf29ce484222325);
+    for(int i=0;i<32;i++)h=(h^bytes[i])*UINT64_C(0x100000001b3);
+    return h;
+}
+static int hit_profile_ok(void) {
+    return FW_COMPONENT_AT==FW_COMPONENT_ENTRY+8 &&
+        code_fingerprint((const unsigned char *)FW_COMPONENT_ENTRY)==FW_COMPONENT_FNV;
+}
 static uintptr_t word(uintptr_t p,int n){return *(const uintptr_t *)(p+n);}
 static int integer(uintptr_t p,int n){return *(const int *)(p+n);}
 static int ro(uintptr_t p,size_t n){return p>=FW_RO_BEGIN && p<=FW_RO_END-n;}
@@ -374,6 +383,9 @@ static int init(const az_core_v1 *core) {
        !AZ_HAS(core,draw_image) || !AZ_HAS(core,fill_rect) || !AZ_HAS(core,draw_text) || !AZ_HAS(core,text_width) ||
        !AZ_HAS(core,draw_line) || !AZ_HAS(core,register_screen))return 1;
     if(!C->fw_tag() || strcmp(C->fw_tag(),PV_FW))return 2;
+    /* Check the exact unpatched entry before registering or claiming anything.
+     * Store only its fingerprint in this project, never firmware code bytes. */
+    if(!hit_profile_ok())return 14;
     az_row_v1 row={.size=sizeof row,.key="enabled",.label="CDJ Player View",.kind=AZ_ROW_TOGGLE,
         .help="Native AZ waveforms, grid and cue markers. Experimental community port."};
     enable_row=C->register_row(MOD_ID,&row);if(enable_row<0)return 3;
