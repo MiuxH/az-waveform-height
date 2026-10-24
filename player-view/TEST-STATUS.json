@@ -4,9 +4,9 @@
   "plain": "passed",
   "asan_ubsan": "passed; leak inspection disabled",
   "tsan": "passed",
-  "fixture_assertions": "720 plain / 720 ASan-UBSan / 723 TSan before status-page addition; time-dependent repaint assertions",
-  "arm64_build": "pending",
-  "official_validator": "pending",
+  "fixture_assertions": "722 plain / 722 ASan-UBSan / 725 TSan; time-dependent repaint assertions",
+  "arm64_build": "passed",
+  "official_validator": "passed",
   "emulator_runtime": "pending",
   "hardware_runtime": "not released for hardware testing",
   "visual_reference_comparison": "pending emulator screenshots",
@@ -16,5 +16,14 @@
     "no SDK sync-master identity",
     "native preview data resolution unchanged",
     "stem overlay placement unverified"
-  ]
+  ],
+  "workflow_run": "https://github.com/MiuxH/az-waveform-height/actions/runs/40082312838",
+  "source_commit": "878af7ccd90831c16221fcd096f22dc31ac292c4",
+  "package_sha256": "344ab36b53fe11a91026529dbb8c7fd31c29ecd6911cac99c9b4fff27ea9515e",
+  "package_size": 113878,
+  "hooks": [
+    "paintEntireComponent 0x25d4a80",
+    "getComponentAt(Point<int> const&) 0x25f03d0"
+  ],
+  "installer_tests": "5 passed"
 }
