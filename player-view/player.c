@@ -25,12 +25,14 @@ struct presented {
     int width,count,focus,left,right;
     unsigned waves,previews,valid;
     uint64_t stamp;
+    int fx_y,fx_h;
 };
 static struct {
     unsigned seq;
     int width,count,focus,left,right;
     unsigned waves,previews,valid;
     uint64_t stamp;
+    int fx_y,fx_h;
 } pub;
 static int focus_deck,left_deck=0,right_deck=1;
 static unsigned select_last[2];
@@ -49,13 +51,15 @@ static void publish(const struct presented *v) {
     STORE(&pub.width,v->width);STORE(&pub.count,v->count);STORE(&pub.focus,v->focus);
     STORE(&pub.left,v->left);STORE(&pub.right,v->right);STORE(&pub.waves,v->waves);
     STORE(&pub.previews,v->previews);STORE(&pub.valid,v->valid);STORE(&pub.stamp,v->stamp);
+    STORE(&pub.fx_y,v->fx_y);STORE(&pub.fx_h,v->fx_h);
     __atomic_fetch_add(&pub.seq,1,__ATOMIC_RELEASE);
 }
 static int snapshot(struct presented *v) {
     for(int tries=0;tries<3;tries++) {
         unsigned a=LOAD(&pub.seq);if(a&1)continue;
         *v=(struct presented){LOAD(&pub.width),LOAD(&pub.count),LOAD(&pub.focus),LOAD(&pub.left),
-            LOAD(&pub.right),LOAD(&pub.waves),LOAD(&pub.previews),LOAD(&pub.valid),LOAD(&pub.stamp)};
+            LOAD(&pub.right),LOAD(&pub.waves),LOAD(&pub.previews),LOAD(&pub.valid),LOAD(&pub.stamp),
+            LOAD(&pub.fx_y),LOAD(&pub.fx_h)};
         if(a==LOAD(&pub.seq))return 1;
     }
     memset(v,0,sizeof *v);return 0;
@@ -98,16 +102,18 @@ static int children(uintptr_t p,uintptr_t *kids) {
 }
 static int visible(uintptr_t p){return !!(*(const unsigned char *)(p+0xc0)&2);}
 static rect bounds(uintptr_t p){return (rect){integer(p,0x20),integer(p,0x24),integer(p,0x28),integer(p,0x2c)};}
-struct native_parts {uintptr_t box[4],owner[4],preview[4],fx;rect fx_rect;int modal;};
+struct native_parts {uintptr_t box[4],owner[4],preview[4],fx;rect fx_rect;int modal,visited,truncated;unsigned families;};
 /* Borrow a bounded live child tree only during native message-thread paint.
  * Parent links and known primary vtables establish deck ownership. */
 static void census(uintptr_t root,struct native_parts *n) {
-    struct item {uintptr_t p;int deck,depth,x,y,shown;} queue[1024];
-    int head=0,tail=1;
+    struct item {uintptr_t p;int deck,depth,x,y,shown;} queue[2048];
+    int tail=1;
     queue[0]=(struct item){root,-1,0,0,0,1};
     memset(n,0,sizeof *n);
-    while(head<tail) {
-        struct item q=queue[head++];
+    /* Depth first: detailed waveform marker subtrees must not exhaust a
+     * breadth-first queue before the footer/preview families are visited. */
+    while(tail && n->visited<8192) {
+        struct item q=queue[--tail];n->visited++;
         uintptr_t p=q.p,full=primary(p);
         if(!full)continue;
         uintptr_t vt=word(full,0);
@@ -127,7 +133,10 @@ static void census(uintptr_t root,struct native_parts *n) {
                 }
             }
         }
-        if(vt==FW_PREVIEW && deck>=0 && q.shown)n->preview[deck]=p;
+        if(vt==FW_PREVIEW_FAMILY && deck>=0 && q.shown) {
+            n->preview[deck]=p;n->families|=1u<<deck;
+        } else if(vt==FW_PREVIEW && deck>=0 && q.shown && !(n->families&(1u<<deck)))
+            n->preview[deck]=p;
         /* Reserve the container, including its expand/collapse arrow.
          * Reserving only FxBody would paint over the native drawer control. */
         if((vt==FW_FX_CONTAINER || (vt==FW_FX_BODY && !n->fx)) && q.shown) {
@@ -137,15 +146,19 @@ static void census(uintptr_t root,struct native_parts *n) {
         if(q.shown && (vt==FW_INFO ||
             class_name(p,"N3gui8shortcut12ShortcutViewE") ||
             class_name(p,"N3gui7utility11UtilityViewE")))n->modal=1;
-        if(q.depth>=12)continue;
+        /* Their descendants are painted natively and need no census. */
+        if(word(p,0)==FW_BOX || vt==FW_PREVIEW_FAMILY)continue;
+        if(q.depth>=16){n->truncated=1;continue;}
         uintptr_t list=0;int count=children(p,&list);
-        for(int i=0;i<count && tail<1024;i++) {
+        for(int i=count-1;i>=0;i--) {
+            if(tail>=2048){n->truncated=1;break;}
             uintptr_t child=word(list,8*i);
             if(!sane(child) || word(child,0x18)!=p)continue;
             rect r=bounds(child);
             queue[tail++]=(struct item){child,deck,q.depth+1,q.x+r.x,q.y+r.y,q.shown&&visible(child)};
         }
     }
+    if(tail)n->truncated=1;
 }
 static void native_save(void *g){((void (*)(void *))FW_G_SAVE)(g);}
 static void native_restore(void *g){((void (*)(void *))FW_G_RESTORE)(g);}
@@ -191,7 +204,8 @@ static void *component_at(void *self,const int *point) {
     if(point && sane(p) && word(p,0)==FW_VIEW && enabled() && C->view()==AZ_VIEW_DECK) {
         struct presented state;
         if(snapshot(&state) && state.valid && now_ns()-state.stamp<250000000u &&
-           point[0]>=0 && point[0]<state.width && point[1]>=96 && point[1]<800)return NULL;
+           point[0]>=0 && point[0]<1280 && point[1]>=96 && point[1]<800 &&
+           !(point[0]>=state.width && point[1]>=state.fx_y && point[1]<state.fx_y+state.fx_h))return NULL;
     }
     return original_component_at(self,point);
 }
@@ -229,26 +243,25 @@ static void paint(void *self,void *g,int ignore_alpha) {
         }
         mode_identity=0;
     }
-    original(self,g,ignore_alpha);
+    /* Component painting can leave a reduced graphics state behind. The
+     * composition must use the caller's original clip/transform. */
+    native_save(g);original(self,g,ignore_alpha);native_restore(g);
     /* The original can run native layout callbacks. Never reuse captures
      * taken before it; obtain the current tree again. */
     census(view,&parts);
     struct presented state={0};
     state.stamp=now_ns();
-    for(int d=0;d<4;d++){
-        if(parts.box[d] && parts.owner[d])state.waves|=1u<<d;
-        if(parts.preview[d])state.previews|=1u<<d;
-    }
     if(!on || parts.modal || integer(view,0x3a8)!=2 ||
         integer(view,0x28)!=1280 || integer(view,0x2c)!=800)goto done;
     /* Unknown partial trees remain stock, never a fabricated waveform. */
     for(int d=0;d<4;d++)if(!parts.box[d] || !parts.owner[d])goto done;
     state.width=parts.fx?parts.fx_rect.x:1280;
+    if(parts.fx){state.fx_y=parts.fx_rect.y;state.fx_h=parts.fx_rect.h;}
     state.count=count_for(C->row_value(count_row));
     state.focus=LOAD(&focus_deck);state.left=LOAD(&left_deck);state.right=LOAD(&right_deck);
     if(state.focus<0 || state.focus>3 || state.left<0 || state.left>3 || state.right<0 || state.right>3)goto done;
     native_save(g);
-    native_fill(g,(rect){0,96,state.width,704},0x050505);
+    native_fill(g,(rect){0,96,1280,704},0x050505);
     for(int i=0;i<state.count;i++) {
         int d=player_for(state.count,i,state.focus,state.left,state.right);
         struct layout l=geometry(state.width,state.count,i);
@@ -265,12 +278,18 @@ static void paint(void *self,void *g,int ignore_alpha) {
                 native_part(g,parts.preview[d],(rect){0,0,b.w,b.h},l.preview))state.previews|=1u<<d;
         }
     }
+    /* Clear ALL stock player pixels, then repaint only the actual shared FX
+     * container, preserving its native children, parameters and input paths. */
+    if(parts.fx) {
+        rect r=parts.fx_rect;
+        native_part(g,parts.fx,(rect){0,0,r.w,r.h},r);
+    }
     native_restore(g);
     state.valid=1;
     /* Reuse native invalidations and promote the following native frame to
      * the complete composed area. No private 20/30-FPS waveform timer. */
     if(state.stamp-repaint_at>=15000000u) {
-        int r[4]={0,96,state.width,704};
+        int r[4]={0,96,1280,704};
         ((void (*)(void *,const int *))FW_REPAINT)(self,r);repaint_at=state.stamp;
     }
 done:
@@ -300,7 +319,7 @@ static void status_draw(az_draw *d,az_rect r,void *user) {
     C->draw_text(d,r.x+8,r.y+38,line,14,0xffffff);
     snprintf(line,sizeof line,"Players: %d   Width: %d",p.count,p.width);
     C->draw_text(d,r.x+8,r.y+66,line,14,0xffffff);
-    C->draw_text(d,r.x+8,r.y+94,"F = all four decks found",12,0xaaaaaa);
+    C->draw_text(d,r.x+8,r.y+94,"Masks show drawn players; F = four",12,0xaaaaaa);
 }
 static const az_screen_v1 status_screen={.size=sizeof(az_screen_v1),.on_draw=status_draw};
 static int surface_input(const az_event *e,void *user) {
@@ -340,6 +359,8 @@ static int touch(const az_touch *t,void *user) {
             return AZ_TOUCH_TAKE;
         }
     }
+    if(t->x>=p.width && t->x<1280 && t->y>=96 && t->y<800 &&
+       !(t->y>=p.fx_y && t->y<p.fx_y+p.fx_h)) {was_down=t->down;return AZ_TOUCH_TAKE;}
     return AZ_TOUCH_PASS;
 }
 static int frames(int bus,unsigned char *f,int len,void *user) {
@@ -360,6 +381,14 @@ static void tick(void) {
     STORE(&native_conflicts,conflicts);
     if(conflicts && C->row_value(enable_row)>0)C->row_set(enable_row,0);
     struct presented p;snapshot(&p);
+    static int last_count=-1,last_width=-1,last_valid=-1;
+    static unsigned last_waves=~0u,last_previews=~0u;
+    if(AZ_HAS(C,log) && (last_count!=p.count || last_width!=p.width || last_valid!=(int)p.valid ||
+       last_waves!=p.waves || last_previews!=p.previews)) {
+        C->log(MOD_ID,"native layout valid=%u players=%d width=%d drawn-wave=%X drawn-preview=%X fx-y=%d fx-h=%d",
+            p.valid,p.count,p.width,p.waves,p.previews,p.fx_y,p.fx_h);
+        last_count=p.count;last_width=p.width;last_valid=p.valid;last_waves=p.waves;last_previews=p.previews;
+    }
     int show=enabled() && C->view()==AZ_VIEW_DECK && p.valid && now_ns()-p.stamp<500000000u;
     for(int k=0;k<4;k++) {
         int row=k/2,exists=show && (row==0 || p.count==4);

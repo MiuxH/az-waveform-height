@@ -7,6 +7,7 @@
 #define FW_BOX ((uintptr_t)0x2ee92d0)
 #define FW_OWNER ((uintptr_t)0x2ee9078)
 #define FW_PREVIEW ((uintptr_t)0x2f1a3b8)
+#define FW_PREVIEW_FAMILY ((uintptr_t)0x2f1cdc8)
 #define FW_PI2 ((uintptr_t)0x30ef370)
 #define FW_PI4 ((uintptr_t)0x30f0328)
 #define FW_SW2 ((uintptr_t)0x3093008)

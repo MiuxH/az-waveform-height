@@ -49,6 +49,7 @@ static int pv_number_width(const char *s, int cell) {
 static int pv_number(const azmod_fb *fb, struct pv_rect r, const char *s, int px, uint32_t color) {
     color|=0xff000000u;
     if (r.w<1 || r.h<1 || r.x<0 || r.y<0 || r.x+r.w>fb->w || r.y+r.h>fb->h) return 0;
+    if(community_native)return community_number(fb,r.x,r.y,r.w,r.h,s,px,color);
     if (px<9) px=9;
     if (px>r.h*4/3) px=r.h*4/3;
     int cell=(px*56+50)/100;

@@ -60,6 +60,20 @@ static int azmod_ttf_player_number(const azmod_fb *f,int x,int baseline,const ch
     if(px*3/2>baseline)px=baseline*2/3;
     return label_add(f,x,baseline-px*3/2,px*3/2,s,px,color);
 }
+/* Return exactly the advance of the font we actually draw. The previous
+ * bitmap cell estimate left fractions detached and cropped the last digit. */
+static int community_number(const azmod_fb *f,int x,int y,int w,int h,const char *s,int px,uint32_t color) {
+    if(w<1 || h<12)return 0;
+    if(px>64)px=64;
+    while(px>8 && (px*3/2>h || render_core->text_width(s,px)>w))px--;
+    int advance=render_core->text_width(s,px);
+    if(advance>w || px*3/2>h)return 0;
+    /* All fractions use the same bottom baseline as their integer part. */
+    int before=nlabels;
+    label_add(f,x,y+h-px*3/2,px*3/2,s,px,color);
+    if(nlabels>before)labels[nlabels-1].r.w=w;
+    return advance;
+}
 static void draw_text(const azmod_fb *f,int x,int y,const char *s,int scale,uint32_t col) {
     label_add(f,x,y,f->h-y,s,scale*8,col);
 }
@@ -86,6 +100,7 @@ void community_render(az_draw *ctx,int width,int count,int focus,int left,int ri
     for(int d=0;d<4;d++) {
         const az_deck_info *in=&info[d];struct pv_deck *out=&data[d];
         out->loaded=in->loaded;out->elapsed=in->pos_s;out->duration=in->len_s;
+        out->track_bpm=NAN;
         out->bpm=in->bpm;out->phase=-1;out->tempo=NAN;
         out->pad_mode=out->tempo_range=out->master_tempo=out->quantize=out->quantize_value=-1;
         out->auto_cue=out->auto_hotcue=out->track_number=out->beat_jump=-1;

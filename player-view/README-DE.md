@@ -1,9 +1,35 @@
-# CDJ Player View – Community-Test 0.1.2
+# CDJ Player View – Community-Test 0.1.3
 
 Erster eigenstaendiger Community-Port unserer bisherigen Player View V22.
 Nur Emulator-Test, noch nicht fuer Auftritte oder den echten AZ freigegeben.
 Firmware 2.00, AZ-MODS 1.2.5, exakter Tag ep147-9e9454e357389ece.
 ID miuxh-player-view; der offizielle Core wird nicht ersetzt.
+
+## 0.1.3: Darstellung nach erstem Emulator-Screenshot korrigiert
+
+0.1.2 laedt im Emulator, zeigt jedoch native AZ-Reste rechts, eine fehlende
+Gesamtwellenform und abgeschnittene Nachkommastellen. Dieser Stand behebt die
+nachvollziehbaren Ursachen im Adapter:
+
+- Gesamte Player-Flaeche inklusive rechter Restspalte loeschen; danach nur den
+  echten gemeinsamen Beat-FX-Container mit nativen Kindern erneut zeichnen.
+- Graphics-Zustand um den originalen Paint sichern/wiederherstellen, damit ein
+  verbliebener Clip/Transform die neue Darstellung nicht beschneidet.
+- Bevorzugt den vollstaendigen PlayerInfoWaveformWidget-Baum zeichnen: native
+  Gesamtwelle und die dort vorhandenen Hot-/Memory-Cue-/Positions-/Zeit-Komponenten.
+  Der innere WaveformWidget ist nur ein reduzierter Fallback ohne Cue-Garantie.
+- Tiefensuche mit begrenztem Stack, ausgelassene Wavebox-Unterbaeume und groesseres
+  Besuchsbudget verhindern, dass zahlreiche Detailmarker die Preview-Suche verdraengen.
+- Zahlenbreite aus den echten SDK-Fontmetriken statt alten Bitmap-Zellen bestimmen;
+  Bruchteile stehen an derselben unteren Grundlinie, unbekannte Original-BPM sind --.
+- Ausgeblendete AZ-Bedienflaechen rechts unterhalb Beat FX bleiben auch fuer
+  Maus-/Touch-Ereignisse gesperrt. Sichtbares Beat FX bleibt nativ bedienbar.
+- Diagnose protokolliert Spielerzahl, Breite, gezeichnete Detail-/Preview-Masken
+  und die native Beat-FX-Hoehe. Masken beziehen sich auf gezeichnete Player.
+
+Diese Korrekturen sind noch kein visuell bestaetigtes CDJ-1:1-Ergebnis.
+Erneuter Emulatorvergleich fuer 1/2/4 und alle drei Farben erforderlich.
+Zwei Player bleiben nebeneinander; gleiche Hoehenproportionen wie ein Player.
 
 ## 0.1.2: Hook-Einstieg korrigiert
 
@@ -33,8 +59,8 @@ bytegleich zum validierten 0.1.0-Testbuild; nur das Paketmanifest aendert sich.
   Zweiplayer folgt linker/rechter Hardwareseite. Kein Master- oder FX-Wechsel.
 - Detailwaveform wird durch den echten nativen Waveform-Box-Zeichner gemalt.
   Native Cue-Komponenten, Playhead und Beatgrid bleiben in dessen Kindbaum.
-- Die Gesamtwellenform stammt aus dem echten nativen WaveformWidget samt
-  dessen vorhandenen Hot-/Memory-Cue-Komponenten. Kein eigener PWV-Farbfilter.
+- Die Gesamtwellenform stammt bevorzugt aus dem nativen PlayerInfoWaveformWidget
+  samt dessen vorhandenen Hot-/Memory-Cue-Komponenten. Kein eigener PWV-Farbfilter.
 - BLUE, RGB und 3 BAND folgen der nativen Farbeinstellung unter SHORTCUT.
   Es werden keine Analysedaten oder nicht geladene Cues erfunden.
 - Beatgrid-Leisten werden separat vom Audioinnenbereich eingepasst: die
@@ -95,8 +121,8 @@ sind in der neuen Kombination noch nicht laufzeitgeprueft.
 6. Mit AZ Control / physischen Tasten Tracks laden und Play testen.
    Farbe am nativen SHORTCUT waehlen; fuer jede Farbe 1/2/4 ausprobieren.
 7. Player-Test-pruefen.bat speichert Initialisierung/EP147-Diagnose.
-   Unter Native renderer status steht F fuer vier gefundene native Details
-   beziehungsweise Previews. Bei leerem Bild diese Werte mitmelden.
+   Unter Native renderer status steht F fuer vier gezeichnete native Details
+   beziehungsweise Previews in der Viereransicht. Bei leerem Bild diese Werte mitmelden.
 
 Ein konkurrierender offizieller Layout-Schalter deaktiviert unsere eigene
 Enable-Zeile; fremde Mod-Zeilen duerfen wir per SDK nicht umschalten.

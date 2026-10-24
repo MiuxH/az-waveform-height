@@ -7,12 +7,13 @@
 #include <math.h>
 #include <pthread.h>
 #include "../azmod-mod.h"
-static uintptr_t view_vt[8],field_vt[8],box_vt[8],owner_vt[8],preview_vt[8],pi_vt[8],sw_vt[8],other_vt[8];
+static uintptr_t view_vt[8],field_vt[8],box_vt[8],owner_vt[8],preview_vt[8],pi_vt[8],sw_vt[8],other_vt[8],family_vt[8];
 #define FW_VIEW ((uintptr_t)(view_vt+2))
 #define FW_FIELD ((uintptr_t)(field_vt+2))
 #define FW_BOX ((uintptr_t)(box_vt+2))
 #define FW_OWNER ((uintptr_t)(owner_vt+2))
 #define FW_PREVIEW ((uintptr_t)(preview_vt+2))
+#define FW_PREVIEW_FAMILY ((uintptr_t)(family_vt+2))
 #define FW_PI2 ((uintptr_t)(pi_vt+2))
 #define FW_PI4 ((uintptr_t)(pi_vt+2))
 #define FW_SW2 ((uintptr_t)(sw_vt+2))
@@ -49,11 +50,13 @@ static uint64_t fixture_fingerprint;
 #include "../player.c"
 static int checks;
 #define CHECK(expr) do {checks++;if(!(expr)){fprintf(stderr,"failed line %d: %s\n",__LINE__,#expr);exit(1);}}while(0)
-static _Alignas(8) unsigned char root[0x500],fields[4][0x100],owners[4][0x19a00],footers[4][0x200],previews[4][0x100];
-static uintptr_t root_kids[8],field_kids[4][1],footer_kids[4][1];
+static _Alignas(8) unsigned char root[0x500],fields[4][0x100],owners[4][0x19a00],footers[4][0x200],previews[4][0x100],families[4][0x100],fx[0x100];
+static uintptr_t root_kids[9],field_kids[4][1],footer_kids[4][1],family_kids[4][1];
 static int row_values[8],nrows,original_calls,native_calls,saves,relayouts,repaints,shown,clips,texts,nsurfaces;
 static int view_kind=AZ_VIEW_DECK;
 static float last_matrix[6];
+static int cleared_full,fx_draws;
+static int time_pending,time_end,time_base,fraction_checks;
 static void ptr(void *p,int off,uintptr_t v){memcpy((char *)p+off,&v,8);}
 static void num(void *p,int off,int v){memcpy((char *)p+off,&v,4);}
 static void component(void *p,uintptr_t vt,uintptr_t par,int x,int y,int w,int h){
@@ -72,7 +75,10 @@ static void graph(void){
   component((void *)box,FW_BOX,(uintptr_t)fields[d],172,0,838,86);field_kids[d][0]=box;
   component(footers[d],FW_PI4,(uintptr_t)root,0,600+d*40,640,86);num(footers[d],0x128,d);
   ptr(footers[d],0x40,(uintptr_t)footer_kids[d]);num(footers[d],0x50,1);
-  component(previews[d],FW_PREVIEW,(uintptr_t)footers[d],0,10,460,60);footer_kids[d][0]=(uintptr_t)previews[d];
+  component(families[d],FW_PREVIEW_FAMILY,(uintptr_t)footers[d],50,20,460,64);
+  ptr(families[d],0x40,(uintptr_t)family_kids[d]);num(families[d],0x50,1);
+  family_kids[d][0]=(uintptr_t)previews[d];
+  component(previews[d],FW_PREVIEW,(uintptr_t)families[d],0,10,460,40);footer_kids[d][0]=(uintptr_t)families[d];
   root_kids[d]=(uintptr_t)fields[d];root_kids[d+4]=(uintptr_t)footers[d];
  }
 }
@@ -92,7 +98,9 @@ static void orig(void *s,void *g,int a){(void)s;(void)g;(void)a;original_calls++
 static void *at_orig(void *self,const int *point){(void)point;return self;}
 static int claim(const char *id,uintptr_t a,void *fn,void **out){(void)id;(void)fn;CHECK(a==FW_PAINT_ENTIRE || a==FW_COMPONENT_AT);*out=a==FW_PAINT_ENTIRE?(void *)orig:(void *)at_orig;return 0;}
 static int touch_filter(const char *id,az_touch_fn fn,void *user){(void)id;(void)user;CHECK(fn!=NULL);return 0;}
-static void txt(az_draw *d,int x,int y,const char *s,int px,uint32_t c){(void)d;(void)x;(void)y;(void)s;(void)c;CHECK(px>=8&&px<=96);texts++;}
+static void txt(az_draw *d,int x,int y,const char *s,int px,uint32_t c){(void)d;(void)c;CHECK(px>=8&&px<=96);texts++;
+ if(!strcmp(s,"03:50")){time_pending=1;time_end=x+(int)strlen(s)*px/2;time_base=y+px*3/2;}
+ else if(time_pending && !strcmp(s,".000")){CHECK(x==time_end+2);CHECK(y+px*3/2==time_base);time_pending=0;fraction_checks++;}}
 static int width(const char *s,int px){return (int)strlen(s)*px/2;}
 static void fill_sdk(az_draw *d,int x,int y,int w,int h,uint32_t c){(void)d;(void)x;(void)y;(void)w;(void)h;(void)c;}
 static void line_sdk(az_draw *d,int x,int y,int x1,int y1,int w,uint32_t c){(void)d;(void)x;(void)y;(void)x1;(void)y1;(void)w;(void)c;}
@@ -108,7 +116,7 @@ static int image_sdk(az_draw *d,int x,int y,const unsigned char *p,int w,int h){
 }
 static int info(int d,az_deck_info *o){o->loaded=1;o->pos_s=10+d;o->len_s=240;o->bpm=150+d;snprintf(o->title,128,"Track %d",d+1);return 0;}
 static int grid(int d,double *beat,double *bar){*beat=d*.1;*bar=-1;return 0;}
-static void mock_children(void *s,void *g){(void)g;CHECK(sane((uintptr_t)s));native_calls++;}
+static void mock_children(void *s,void *g){(void)g;CHECK(sane((uintptr_t)s));native_calls++;if(s==fx)fx_draws++;}
 static void mock_relayout(uintptr_t s){CHECK(s==(uintptr_t)root);relayouts++;}
 static void mock_repaint(void *s,const int *r){CHECK(s==(void *)root&&r[1]==96);repaints++;}
 static void mock_save(void *g){(void)g;saves++;}
@@ -116,7 +124,7 @@ static void mock_restore(void *g){(void)g;saves--;CHECK(saves>=0);}
 static int mock_clip(void *g,const int *r){(void)g;CHECK(valid_rect((rect){r[0],r[1],r[2],r[3]},1280,800));clips++;return 1;}
 static void mock_transform(void *g,const float *m){(void)g;memcpy(last_matrix,m,sizeof last_matrix);CHECK(isfinite(m[0])&&isfinite(m[4]));}
 static void mock_colour(void *g,const uint32_t *c){(void)g;CHECK((*c&0xff000000u)==0xff000000u);}
-static void mock_fill(void *g,float x,float y,float w,float h){(void)g;CHECK(x==0&&y==96&&w>=900&&h==704);}
+static void mock_fill(void *g,float x,float y,float w,float h){(void)g;CHECK(x==0&&y==96&&w==1280&&h==704);cleared_full++;}
 static unsigned stress_done,stress_bad;
 static void *publisher(void *unused) {
  (void)unused;
@@ -146,8 +154,11 @@ int main(void){
  for(int choice=0;choice<3;choice++){
   row_values[count_row]=choice;native_calls=0;paint(root,(void *)1,1);
   struct presented p;CHECK(snapshot(&p)&&p.valid&&p.count==count_for(choice));CHECK(p.waves==15u || choice<2);
-  CHECK(native_calls==5*count_for(choice));CHECK(!saves);tick();CHECK(shown);
-  surface_paint((az_draw *)1,(az_rect){0,96,1280,704},NULL);CHECK(texts>0);
+  CHECK(native_calls==5*count_for(choice));CHECK(cleared_full>0);
+  struct native_parts found;census((uintptr_t)root,&found);CHECK(found.families==15u&&!found.truncated);
+  for(int dd=0;dd<4;dd++) {CHECK(found.preview[dd]==(uintptr_t)families[dd]);}
+  CHECK(!saves);tick();CHECK(shown);
+  surface_paint((az_draw *)1,(az_rect){0,96,1280,704},NULL);CHECK(texts>0);CHECK(fraction_checks==choice+1);
  }
  CHECK(relayouts==1&&integer((uintptr_t)root,0x3a8)==2);
  unsigned char f[32]={0};f[9]=1;frames(AZ_BUS_ERP_IN,f,32,NULL);CHECK(LOAD(&focus_deck)==2&&LOAD(&left_deck)==2);
@@ -180,6 +191,21 @@ int main(void){
   struct layout l=geometry(w,n,i);CHECK(valid_rect(l.wave,w,800)&&valid_rect(l.preview,w,800));
  }
  CHECK(original_calls==7);
+ /* Right-hand stock footer fragments are cleared even when the FX drawer
+  * occupies only the top of that strip; the real container is repainted. */
+ component(fx,FW_FX_CONTAINER,(uintptr_t)root,1044,96,236,400);
+ root_kids[8]=(uintptr_t)fx;num(root,0x50,9);fx_draws=0;
+ row_values[count_row]=0;paint(root,(void *)1,1);CHECK(fx_draws==1);
+ CHECK(component_at(root,(int[]){1200,300})==root);
+ CHECK(component_at(root,(int[]){1200,700})==NULL);
+ CHECK(touch(&(az_touch){0,1200,700,1},NULL)==AZ_TOUCH_TAKE);
+ CHECK(touch(&(az_touch){0,1200,300,1},NULL)==AZ_TOUCH_PASS);
+ touch(&(az_touch){0,0,0,0},NULL);
+ /* Hidden families must not override a visible fallback from another tree. */
+ num(root,0x50,8);*((unsigned char *)families[0]+0xc0)=0;
+ struct native_parts hidden;census((uintptr_t)root,&hidden);CHECK(!hidden.preview[0]);
+ *((unsigned char *)families[0]+0xc0)=2;
+
  publish(&(struct presented){0});
  pthread_t a,b;CHECK(!pthread_create(&a,NULL,publisher,NULL));CHECK(!pthread_create(&b,NULL,reader,NULL));
  CHECK(!pthread_join(a,NULL));CHECK(!pthread_join(b,NULL));CHECK(!LOAD(&stress_bad));
