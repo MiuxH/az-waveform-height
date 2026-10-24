@@ -26,7 +26,7 @@ jobs:
       - name: ARM64 build and official validator
         run: python3 .azmod-sdk/tools/azmod-pack build player-view
       - name: Test package
-        run: python3 .azmod-sdk/tools/azmod-pack package player-view --out dist --github MiuxH/az-waveform-height --tag miuxh-player-view-0.1.0
+        run: python3 .azmod-sdk/tools/azmod-pack package player-view --out dist --github MiuxH/az-waveform-height --tag miuxh-player-view-0.1.1
       - uses: actions/upload-artifact@v4
         with:
           name: miuxh-player-view-test

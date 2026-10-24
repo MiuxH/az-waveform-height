@@ -1,9 +1,17 @@
-# CDJ Player View – Community-Test 0.1.0
+# CDJ Player View – Community-Test 0.1.1
 
 Erster eigenstaendiger Community-Port unserer bisherigen Player View V22.
 Nur Emulator-Test, noch nicht fuer Auftritte oder den echten AZ freigegeben.
 Firmware 2.00, AZ-MODS 1.2.5, exakter Tag ep147-9e9454e357389ece.
 ID miuxh-player-view; der offizielle Core wird nicht ersetzt.
+
+## 0.1.1: Versionssperre korrigiert
+
+0.1.0 wurde vor init mit "Needs AZ-MODS 1.2.5 or newer" abgewiesen.
+Die benutzten SDK-Dienste existieren ab 1.2.3 und werden einzeln mit AZ_HAS
+geprueft. Deshalb ist min_core jetzt 1.2.3. Fuer den Test weiterhin den
+offiziellen AZ-MODS-Satz 1.2.5 verwenden. Die ARM64-Bibliothek bleibt
+bytegleich zum validierten 0.1.0-Testbuild; nur das Paketmanifest aendert sich.
 
 ## Was in diesem Stand umgesetzt ist
 

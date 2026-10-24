@@ -2,7 +2,7 @@
   "azmod": 1,
   "id": "miuxh-player-view",
   "name": "CDJ Player View",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "MiuxH",
   "summary": "Experimental 1/2/4 player view using native AZ waveform and cue renderers.",
   "description": "First community test port of the existing V22 player presentation. Firmware-specific native paint hook reuses AZ detail waveform, grid and preview component trees, including available native cue markers. SDK text uses installed AZ fonts. Blue/RGB/3 Band follow the native SHORTCUT setting. Preserves native Beat FX and physical controls. Touch audio sheets, preview seek/counter and sync-master identity are not yet ported; moved audio areas consume touches. No network, direct file writes or audio processing. Runtime verification pending.",
@@ -13,7 +13,7 @@
     "ep147-9e9454e357389ece"
   ],
   "hooks": true,
-  "min_core": "1.2.5",
+  "min_core": "1.2.3",
   "category": "visual",
   "beta": true
 }
