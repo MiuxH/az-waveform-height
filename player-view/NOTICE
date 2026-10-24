@@ -1,0 +1,10 @@
+MiuxH CDJ Player View community test port, GPL-3.0-only.
+The legacy-v22 folder preserves the prior Player View work unchanged, except
+player_view_draw.c was recopied identically before adapting a separate chrome.c.
+Original integration base: Kyle-Hosman/xdj-az-mods, commit
+3e0c5cb010454228f4ee63226b60d060494eeaae, with MiuxH Player View V22 changes.
+Pure layout helpers and CDJ-inspired chrome are reused under GPL-3.0-only.
+The new community adapter does not link or redistribute the AZ-MODS core.
+All fonts and native waveform/cue components are used from the running firmware;
+no Pioneer/AlphaTheta font, artwork, firmware or music bytes are distributed.
+CDJ-3000 and XDJ-AZ are their respective owners' marks; this is an unofficial mod.

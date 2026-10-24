@@ -1,0 +1,34 @@
+name: player-community-test
+on:
+  push:
+    branches: [player-view-community]
+    paths: ['player-view/**', '.github/workflows/player-community.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native and render fixtures
+        run: |
+          sudo sysctl vm.mmap_rnd_bits=28
+          python3 player-view/tests/run.py --passes plain asan tsan
+      - uses: actions/checkout@v4
+        with:
+          repository: Kyle-Hosman/az-mods-sdk
+          ref: 3dcaf8f7331ea94135d7161f653edfaf906d5ea6
+          path: .azmod-sdk
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - name: ARM64 build and official validator
+        run: python3 .azmod-sdk/tools/azmod-pack build player-view
+      - name: Test package
+        run: python3 .azmod-sdk/tools/azmod-pack package player-view --out dist --github MiuxH/az-waveform-height --tag miuxh-player-view-0.1.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: miuxh-player-view-test
+          path: dist/
+          if-no-files-found: error

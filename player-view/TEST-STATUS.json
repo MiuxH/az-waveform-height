@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "scope": "first community port; native waveform composition prototype",
+  "plain": "passed",
+  "asan_ubsan": "passed; leak inspection disabled",
+  "tsan": "passed",
+  "fixture_assertions": "720 plain / 720 ASan-UBSan / 723 TSan before status-page addition; time-dependent repaint assertions",
+  "arm64_build": "pending",
+  "official_validator": "pending",
+  "emulator_runtime": "pending",
+  "hardware_runtime": "not released for hardware testing",
+  "visual_reference_comparison": "pending emulator screenshots",
+  "measured_fps": null,
+  "known_limits": [
+    "touch audio sheets and preview seek/counter not ported",
+    "no SDK sync-master identity",
+    "native preview data resolution unchanged",
+    "stem overlay placement unverified"
+  ]
+}
